@@ -7,17 +7,27 @@ plugins {
 group 'org.factomprotocol.identity'
 version '0.3.0-SNAPSHOT'
 
+ext {
+    // the password needs to be specified via command line
+    repoUser = project.hasProperty('repoUser') ? project.getProperty('repoUser') : credentials.nexusUser
+    repoPass = project.hasProperty('repoPass') ? project.getProperty('repoPass') : credentials.nexusPassword
+}
+
 sourceCompatibility = 8
 repositories {
     mavenLocal()
     google()
     jcenter()
     mavenCentral()
+    maven {
+        url "http://nexus.qa.sphereon.com/repository/sphereon-opensource-releases"
+    }
 }
 configurations.all {
     resolutionStrategy.cacheChangingModulesFor 0, 'seconds'
 
 }
+/*
 
 allprojects {
     apply plugin: "maven"
@@ -29,15 +39,60 @@ allprojects {
         maven {
             url "https://plugins.gradle.org/m2/"
         }
+        maven {
+            url "http://nexus.qa.sphereon.com/repository/sphereon-opensource-releases"
+        }
+        maven {
+            url "http://nexus.qa.sphereon.com/repository/sphereon-opensource-snapshots"
+        }
 
     }
 }
 
+*/
+
 publishing {
     publications {
-        maven(MavenPublication) {
+        mavenJava(MavenPublication) {
             from components.java
+
+            pom {
+
+
+                licenses {
+                    license {
+                        name = 'The Apache License, Version 2.0'
+                        url = 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+                    }
+                }
+                developers {
+                    developer {
+                        id = 'Sphereon'
+                        name = 'Sphereon BV'
+                        email = 'dev@sphereon.com'
+                    }
+                }
+                scm {
+                    connection = 'scm:git:https://github.com/Sphereon-Opensource/factom-identity-java.git'
+                    developerConnection = 'scm:git:https://github.com/Sphereon-Opensource/factom-identity-java.git'
+                    url = 'https://github.com/Sphereon-Opensource/factom-identity-java/'
+                }
+            }
         }
+    }
+
+
+    repositories {
+        maven {
+            def releasesRepoUrl = "http://nexus.qa.sphereon.com/repository/sphereon-opensource-releases"
+            def snapshotsRepoUrl = "http://nexus.qa.sphereon.com/repository/sphereon-opensource-snapshots"
+            url = version.endsWith('SNAPSHOT') ? snapshotsRepoUrl : releasesRepoUrl
+            credentials {
+                username project.repoUser
+                password project.repoPass
+            }
+        }
+        mavenLocal()
     }
 }
 
@@ -49,12 +104,11 @@ dependencies {
     compile group: 'decentralized-identity', name: 'did-common-java', version: '0.2-SNAPSHOT'
     compile group: 'org.factomprotocol.identity', name: 'factom-did-models-java-gson', version: '0.3.0-SNAPSHOT'
     compile "javax.json.bind:javax.json.bind-api:1.0.0-RC2"
+    compile 'net.i2p.crypto:eddsa:0.3.0'
     testCompile 'org.blockchain-innovation.factom.client:logger-slf4j:0.3.0-SNAPSHOT'
     testCompile 'org.blockchain-innovation.factom.client:json-converter-jee:0.3.0-SNAPSHOT'
-    testCompile 'net.i2p.crypto:eddsa:0.3.0'
     testCompile "org.glassfish:javax.json:1.1.2"
     testCompile "org.eclipse:yasson:1.0.1"
-
     testImplementation("org.junit.jupiter:junit-jupiter-api:5.6.1")
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.6.1")
 }
