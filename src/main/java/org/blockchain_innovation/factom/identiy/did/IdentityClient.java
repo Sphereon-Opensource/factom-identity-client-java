@@ -12,18 +12,28 @@ import org.blockchain_innovation.factom.identiy.did.entry.FactomIdentityEntry;
 import org.blockchain_innovation.factom.identiy.did.parse.RuleException;
 import org.factomprotocol.identity.did.model.IdentityResponse;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
 
 public class IdentityClient {
+
     public enum Mode {WALLETD_SIGNING, OFFLINE_SIGNING}
 
+    private final Optional<String> id;
     private FactomdClientImpl factomdClient;
     private LowLevelIdentityClient lowLevelIdentityClient;
     public static final IdentityFactory FACTORY = new IdentityFactory();
 
+    private IdentityClient(Optional<String> id) {
+        this.id = id;
+    }
+
+    public Optional<String> getId() {
+        return id;
+    }
 
     public DIDDocument getDidDocument(String identifier, EntryValidation entryValidation, Optional<Long> blockHeight, Optional<Long> timestamp) throws RuleException {
         return FACTORY.toDid(identifier, getIdentityResponse(identifier, entryValidation, blockHeight, timestamp));
@@ -45,19 +55,13 @@ public class IdentityClient {
     }
 
 
-
-
     private void assertConfigured() {
         if (factomdClient == null || lowLevelIdentityClient == null) {
             throw new DIDRuntimeException("Please configure the identity client first before using it");
         }
     }
 
-    public IdentityClient configureFromEnvironment(Optional<Mode> mode) {
-        return configure(mode.orElse(Mode.OFFLINE_SIGNING), new Properties());
-    }
-
-    public IdentityClient configure(Mode mode, Properties properties) {
+    protected IdentityClient configure(Mode mode, Properties properties) {
         if (factomdClient != null || lowLevelIdentityClient != null) {
             throw new DIDRuntimeException("You cannot reconfigure an identity client. Please create a new instance");
         }
@@ -80,9 +84,43 @@ public class IdentityClient {
     }
 
 
+    public static class Registry {
+        private static Map<String, IdentityClient> instances = new HashMap<>();
+
+        public boolean exists(Optional<String> id) {
+            return instances.get(resolve(id)) != null;
+        }
+
+        public static IdentityClient get(Optional<String> id) {
+            return instances.get(resolve(id));
+        }
+
+        public static IdentityClient put(IdentityClient identityClient) {
+            IdentityClient current = Registry.get(identityClient.getId());
+            if (current != null && current != identityClient) {
+                throw new DIDRuntimeException("Cannot register a second identity client with id " + identityClient.getId().orElse("<null>"));
+            }
+            return instances.put(resolve(identityClient.getId()), identityClient);
+        }
+
+        public static IdentityClient put(IdentityClient.Builder identityClientBuilder) {
+            return put(identityClientBuilder.build());
+        }
+
+        private static String resolve(Optional<String> id) {
+            return id.orElse(null);
+        }
+    }
+
     public static class Builder {
         private Mode mode = Mode.OFFLINE_SIGNING;
         private Properties properties = new Properties();
+        private Optional<String> id = Optional.empty();
+
+        public Builder id(String id) {
+            this.id = Optional.ofNullable(id);
+            return this;
+        }
 
         public Builder mode(Mode mode) {
             this.mode = mode;
@@ -95,7 +133,7 @@ public class IdentityClient {
         }
 
         public Builder properties(Map<String, String> propertiesMap) {
-            propertiesMap.forEach((key,value) -> property(key, value));
+            propertiesMap.forEach((key, value) -> property(key, value));
             return this;
         }
 
@@ -105,7 +143,8 @@ public class IdentityClient {
         }
 
         public IdentityClient build() {
-            return new IdentityClient().configure(mode, properties);
+            return new IdentityClient(id).configure(mode, properties);
         }
     }
+
 }
