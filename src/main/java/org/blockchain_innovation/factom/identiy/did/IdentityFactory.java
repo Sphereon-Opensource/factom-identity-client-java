@@ -70,6 +70,7 @@ public class IdentityFactory {
         DIDURL didurl = DIDURL.fromString(did);
         List<Map<String, Object>> publicKeys = new LinkedList<>();
         List<String> authentications = new ArrayList<>();
+        List<String> assertionMethods = new ArrayList<>();
         List<String> idPubs = identityResponse.getIdentity().getKeys();
 
 
@@ -92,16 +93,18 @@ public class IdentityFactory {
 
             keyAttrs.put("controller", controller);
             authAttrs.put("controller", controller);
-            if (i > 0) {
+            if (i > 0 || idPubs.size() == 1) {
                 authentications.add(id);
+                assertionMethods.add(id);
             }
             publicKeys.add(PublicKey.build(keyAttrs).getJsonLdObject());
         }
 
         // We build using the LdObjects ourselves as the convenience method does not do everything and ojects are not mutable anymore
-        DIDDocument didDocument = DIDDocument.build(didurl.getDid().getDidString(), null, null, null);
+        DIDDocument didDocument = DIDDocument.build("https://www.w3.org/ns/did/v1", didurl.getDid().getDidString(), null, null, null);
         didDocument.setJsonLdObjectKeyValue(DIDDocument.JSONLD_TERM_AUTHENTICATION, authentications);
         didDocument.setJsonLdObjectKeyValue(DIDDocument.JSONLD_TERM_PUBLICKEY, publicKeys);
+        didDocument.setJsonLdObjectKeyValue("assertionMethod", assertionMethods);
 
         return didDocument;
     }
