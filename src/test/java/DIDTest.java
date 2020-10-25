@@ -77,9 +77,9 @@ public class DIDTest extends AbstractIdentityTest {
 //        DIDDocument didDocument = DIDDocument.build(didReference, null, null, null);
 
 
-        CommitAndRevealChainResponse commitAndRevealChainResponse = lowLevelIdentityClient.create(createEntry, new Address(EC_SECRET_ADDRESS));
+        FactomDidContent commitAndRevealChainResponse = lowLevelIdentityClient.create(createEntry, new Address(EC_SECRET_ADDRESS));
 
-        System.err.println(commitAndRevealChainResponse.getRevealResponse());
+        System.err.println(commitAndRevealChainResponse);
         List<FactomIdentityEntry<?>> identityEntries = lowLevelIdentityClient.getAllEntriesByIdentifier("did:factom:e21f9aef1ed841a7d7d634c9dd0dc204c694b51ad7152a44c326113326283eeb", EntryValidation.THROW_ERROR);
         assertNotNull(identityEntries);
         FactomIdentityEntry<?> identityEntry = identityEntries.get(0);

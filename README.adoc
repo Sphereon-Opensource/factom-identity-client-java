@@ -6,7 +6,7 @@ C
 
 == Maven installation
 This is a gradle project but maven snapshots and releases are distributed on the Nexus installation of Sphereon at
-http://nexus.qa.sphereon.com/repository/sphereon-opensource-releases/
+https://nexus.qa.sphereon.com/repository/sphereon-opensource-releases/
 
 You need at least the following dependencies in your application
 

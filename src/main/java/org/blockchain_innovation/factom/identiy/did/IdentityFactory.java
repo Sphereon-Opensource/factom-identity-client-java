@@ -100,7 +100,7 @@ public class IdentityFactory {
             publicKeys.add(PublicKey.build(keyAttrs).getJsonLdObject());
         }
 
-        // We build using the LdObjects ourselves as the convenience method does not do everything and ojects are not mutable anymore
+        // We build using the LdObjects ourselves as the convenience method does not do everything and objects are not mutable anymore
         DIDDocument didDocument = DIDDocument.build("https://www.w3.org/ns/did/v1", didurl.getDid().getDidString(), null, null, null);
         didDocument.setJsonLdObjectKeyValue(DIDDocument.JSONLD_TERM_AUTHENTICATION, authentications);
         didDocument.setJsonLdObjectKeyValue(DIDDocument.JSONLD_TERM_PUBLICKEY, publicKeys);

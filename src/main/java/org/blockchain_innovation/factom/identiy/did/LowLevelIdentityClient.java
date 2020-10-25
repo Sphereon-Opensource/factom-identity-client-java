@@ -12,7 +12,9 @@ import org.blockchain_innovation.factom.client.api.model.response.factomd.EntryR
 import org.blockchain_innovation.factom.client.api.ops.EncodeOperations;
 import org.blockchain_innovation.factom.identiy.did.entry.*;
 import org.blockchain_innovation.factom.identiy.did.parse.RuleException;
+import org.blockchain_innovation.factom.identiy.did.parse.operations.DIDV1CreationCompoundRule;
 import org.factomprotocol.identity.did.model.BlockInfo;
+import org.factomprotocol.identity.did.model.FactomDidContent;
 
 import java.util.*;
 
@@ -119,12 +121,18 @@ public class LowLevelIdentityClient {
      * @param ecAddress      The paying EC address
      * @return
      */
-    public CommitAndRevealChainResponse create(CreateFactomDIDEntry createDidEntry, Address ecAddress) {
+    public FactomDidContent create(CreateFactomDIDEntry createDidEntry, Address ecAddress) {
         Chain chain = new Chain().setFirstEntry(createDidEntry.toEntry(Optional.empty()));
-        if (getEntryApi().chainExists(chain).join()) {
-            throw new FactomRuntimeException.AssertionException(String.format("Factom DID chain for id '%s' already exists", createDidEntry.getChainId()));
+        try {
+            FactomDidContent didContent = new DIDV1CreationCompoundRule(chain).execute();
+            if (getEntryApi().chainExists(chain).join()) {
+                throw new FactomRuntimeException.AssertionException(String.format("Factom DID chain for id '%s' already exists", createDidEntry.getChainId()));
+            }
+            CommitAndRevealChainResponse chainResponse = getEntryApi().commitAndRevealChain(chain, ecAddress).join();
+            return didContent;
+        } catch (RuleException e) {
+            throw new FactomRuntimeException(e);
         }
-        return getEntryApi().commitAndRevealChain(chain, ecAddress).join();
     }
 
     /**

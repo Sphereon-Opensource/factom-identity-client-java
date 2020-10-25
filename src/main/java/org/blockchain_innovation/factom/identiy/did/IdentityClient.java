@@ -1,17 +1,21 @@
 package org.blockchain_innovation.factom.identiy.did;
 
 import did.DIDDocument;
-import org.blockchain_innovation.factom.client.api.settings.RpcSettings;
+import org.blockchain_innovation.factom.client.api.FactomdClient;
+import org.blockchain_innovation.factom.client.api.WalletdClient;
+import org.blockchain_innovation.factom.client.api.model.Address;
+import org.blockchain_innovation.factom.client.api.model.response.CommitAndRevealChainResponse;
 import org.blockchain_innovation.factom.client.impl.EntryApiImpl;
-import org.blockchain_innovation.factom.client.impl.FactomdClientImpl;
-import org.blockchain_innovation.factom.client.impl.OfflineWalletdClientImpl;
-import org.blockchain_innovation.factom.client.impl.WalletdClientImpl;
-import org.blockchain_innovation.factom.client.impl.settings.RpcSettingsImpl;
+import org.blockchain_innovation.factom.client.impl.Networks;
+import org.blockchain_innovation.factom.identiy.did.entry.CreateIdentityRequestEntry;
 import org.blockchain_innovation.factom.identiy.did.entry.EntryValidation;
 import org.blockchain_innovation.factom.identiy.did.entry.FactomIdentityEntry;
 import org.blockchain_innovation.factom.identiy.did.parse.RuleException;
+import org.factomprotocol.identity.did.model.IdentityEntry;
 import org.factomprotocol.identity.did.model.IdentityResponse;
 
+import java.io.File;
+import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -20,19 +24,20 @@ import java.util.Properties;
 
 public class IdentityClient {
 
-    public enum Mode {WALLETD_SIGNING, OFFLINE_SIGNING}
-
-    private final Optional<String> id;
-    private FactomdClientImpl factomdClient;
+    private final Optional<String> networkName;
+    private FactomdClient factomdClient;
+    private WalletdClient walletdClient;
     private LowLevelIdentityClient lowLevelIdentityClient;
     public static final IdentityFactory FACTORY = new IdentityFactory();
 
-    private IdentityClient(Optional<String> id) {
-        this.id = id;
+
+
+    private IdentityClient(Optional<String> networkName) {
+        this.networkName = networkName;
     }
 
-    public Optional<String> getId() {
-        return id;
+    public Optional<String> getNetworkName() {
+        return networkName;
     }
 
     public DIDDocument getDidDocument(String identifier, EntryValidation entryValidation, Optional<Long> blockHeight, Optional<Long> timestamp) throws RuleException {
@@ -45,6 +50,13 @@ public class IdentityClient {
         return FACTORY.toIdentity(identifier, allEntries);
     }
 
+    public IdentityEntry create(CreateIdentityRequestEntry createRequest, Optional<Address> ecAddress) {
+        CommitAndRevealChainResponse commitAndRevealChainResponse = lowLevelClient().create(createRequest, getEcAddress(ecAddress));
+        // FIXME: 20/10/2020
+        return null;
+    }
+
+
     public LowLevelIdentityClient lowLevelClient() {
         assertConfigured();
         return lowLevelIdentityClient;
@@ -55,30 +67,25 @@ public class IdentityClient {
     }
 
 
+    private Address getEcAddress(Optional<Address> address) {
+        return Networks.getECAddress(getNetworkName(), address);
+    }
+
     private void assertConfigured() {
         if (factomdClient == null || lowLevelIdentityClient == null) {
             throw new DIDRuntimeException("Please configure the identity client first before using it");
         }
     }
 
-    protected IdentityClient configure(Mode mode, Properties properties) {
+    protected IdentityClient configure(Properties properties) {
         if (factomdClient != null || lowLevelIdentityClient != null) {
             throw new DIDRuntimeException("You cannot reconfigure an identity client. Please create a new instance");
         }
-
+        this.factomdClient = Networks.factomd(getNetworkName());
+        this.walletdClient = Networks.walletd(getNetworkName());
         EntryApiImpl entryClient = new EntryApiImpl();
-
-        this.factomdClient = new FactomdClientImpl();
-        factomdClient.setSettings(new RpcSettingsImpl(RpcSettings.SubSystem.FACTOMD, properties));
-
         entryClient.setFactomdClient(factomdClient);
-        if (mode == Mode.OFFLINE_SIGNING) {
-            entryClient.setWalletdClient(new OfflineWalletdClientImpl());
-        } else {
-            WalletdClientImpl walletdClient = new WalletdClientImpl();
-            walletdClient.setSettings(new RpcSettingsImpl(RpcSettings.SubSystem.WALLETD, properties));
-            entryClient.setWalletdClient(walletdClient);
-        }
+        entryClient.setWalletdClient(walletdClient);
         this.lowLevelIdentityClient = new LowLevelIdentityClient(entryClient);
         return this;
     }
@@ -87,7 +94,7 @@ public class IdentityClient {
     public static class Registry {
         private static Map<String, IdentityClient> instances = new HashMap<>();
 
-        public boolean exists(Optional<String> id) {
+        public static boolean exists(Optional<String> id) {
             return instances.get(resolve(id)) != null;
         }
 
@@ -96,11 +103,11 @@ public class IdentityClient {
         }
 
         public static IdentityClient put(IdentityClient identityClient) {
-            IdentityClient current = Registry.get(identityClient.getId());
+            IdentityClient current = Registry.get(identityClient.getNetworkName());
             if (current != null && current != identityClient) {
-                throw new DIDRuntimeException("Cannot register a second identity client with id " + identityClient.getId().orElse("<null>"));
+                throw new DIDRuntimeException("Cannot register a second identity client with id " + identityClient.getNetworkName().orElse("<null>"));
             }
-            return instances.put(resolve(identityClient.getId()), identityClient);
+            return instances.put(resolve(identityClient.getNetworkName()), identityClient);
         }
 
         public static IdentityClient put(IdentityClient.Builder identityClientBuilder) {
@@ -108,27 +115,41 @@ public class IdentityClient {
         }
 
         private static String resolve(Optional<String> id) {
-            return id.orElse(null);
+            return id.orElse(Networks.MAINNET);
         }
     }
 
     public static class Builder {
-        private Mode mode = Mode.OFFLINE_SIGNING;
         private Properties properties = new Properties();
-        private Optional<String> id = Optional.empty();
+        private File propertiesFile;
+        private Optional<String> networkName = Optional.empty();
+        private boolean autoRegister = true;
 
-        public Builder id(String id) {
-            this.id = Optional.ofNullable(id);
+        public Builder networkName(String networkName) {
+            this.networkName = Optional.ofNullable(networkName);
             return this;
         }
 
-        public Builder mode(Mode mode) {
-            this.mode = mode;
-            return this;
-        }
 
         public Builder properties(Properties properties) {
             this.properties = properties;
+            return this;
+        }
+
+        public Builder properties(File propertiesFile) {
+            this.propertiesFile = propertiesFile;
+            return this;
+        }
+
+        public Builder properties(Path propertiesPath) {
+            if (propertiesPath != null) {
+                this.propertiesFile = propertiesPath.toFile();
+            }
+            return this;
+        }
+
+        public Builder autoRegister(boolean register) {
+            this.autoRegister = register;
             return this;
         }
 
@@ -142,8 +163,21 @@ public class IdentityClient {
             return this;
         }
 
+
         public IdentityClient build() {
-            return new IdentityClient(id).configure(mode, properties);
+            if (propertiesFile != null) {
+                Networks.init(propertiesFile);
+            }
+            if (properties != null) {
+                Networks.init(properties);
+            }
+
+            IdentityClient identityClient = new IdentityClient(networkName).configure(properties);
+
+            if (autoRegister && !Registry.exists(networkName)) {
+                Registry.put(identityClient);
+            }
+            return identityClient;
         }
     }
 
