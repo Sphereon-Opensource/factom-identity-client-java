@@ -1,16 +1,21 @@
 package org.blockchain_innovation.factom.identiy.did;
 
 import did.DIDDocument;
+import did.parser.ParserException;
 import org.blockchain_innovation.factom.client.api.FactomdClient;
 import org.blockchain_innovation.factom.client.api.WalletdClient;
 import org.blockchain_innovation.factom.client.api.model.Address;
 import org.blockchain_innovation.factom.client.api.model.response.CommitAndRevealChainResponse;
 import org.blockchain_innovation.factom.client.impl.EntryApiImpl;
 import org.blockchain_innovation.factom.client.impl.Networks;
+import org.blockchain_innovation.factom.identiy.did.entry.CreateFactomDIDEntry;
 import org.blockchain_innovation.factom.identiy.did.entry.CreateIdentityRequestEntry;
 import org.blockchain_innovation.factom.identiy.did.entry.EntryValidation;
 import org.blockchain_innovation.factom.identiy.did.entry.FactomIdentityEntry;
+import org.blockchain_innovation.factom.identiy.did.entry.ResolvedFactomDIDEntry;
 import org.blockchain_innovation.factom.identiy.did.parse.RuleException;
+import org.blockchain_innovation.factom.identiy.did.request.CreateFactomDidRequest;
+import org.factomprotocol.identity.did.model.FactomDidContent;
 import org.factomprotocol.identity.did.model.IdentityEntry;
 import org.factomprotocol.identity.did.model.IdentityResponse;
 
@@ -31,7 +36,6 @@ public class IdentityClient {
     public static final IdentityFactory FACTORY = new IdentityFactory();
 
 
-
     private IdentityClient(Optional<String> networkName) {
         this.networkName = networkName;
     }
@@ -40,12 +44,12 @@ public class IdentityClient {
         return networkName;
     }
 
-    public DIDDocument getDidDocument(String identifier, EntryValidation entryValidation, Optional<Long> blockHeight, Optional<Long> timestamp) throws RuleException {
+    public DIDDocument getDidDocument(String identifier, EntryValidation entryValidation, Optional<Long> blockHeight, Optional<Long> timestamp) throws RuleException, ParserException {
         return FACTORY.toDid(identifier, getIdentityResponse(identifier, entryValidation, blockHeight, timestamp));
     }
 
 
-    public IdentityResponse getIdentityResponse(String identifier, EntryValidation entryValidation, Optional<Long> blockHeight, Optional<Long> timestamp) throws RuleException {
+    public IdentityResponse getIdentityResponse(String identifier, EntryValidation entryValidation, Optional<Long> blockHeight, Optional<Long> timestamp) throws RuleException, ParserException {
         List<FactomIdentityEntry<?>> allEntries = lowLevelClient().getAllEntriesByIdentifier(identifier, entryValidation, blockHeight, timestamp);
         return FACTORY.toIdentity(identifier, allEntries);
     }
@@ -54,6 +58,21 @@ public class IdentityClient {
         CommitAndRevealChainResponse commitAndRevealChainResponse = lowLevelClient().create(createRequest, getEcAddress(ecAddress));
         // FIXME: 20/10/2020
         return null;
+    }
+
+    public ResolvedFactomDIDEntry<FactomDidContent> create(CreateFactomDidRequest createRequest, Address ecAddress) {
+        FactomDidContent factomDidContentRequest = createRequest.getFactomDidContent();
+        CreateFactomDIDEntry createEntry = new CreateFactomDIDEntry(
+                createRequest.getDidVersion(),
+                factomDidContentRequest,
+                createRequest.getNonce(),
+                createRequest.getTags());
+        FactomDidContent factomDidContentResult = lowLevelIdentityClient.create(createEntry, ecAddress);
+        return new ResolvedFactomDIDEntry<>(
+                createRequest.getDidVersion(),
+                factomDidContentResult,
+                createRequest.getNonce(),
+                createRequest.getTags());
     }
 
 

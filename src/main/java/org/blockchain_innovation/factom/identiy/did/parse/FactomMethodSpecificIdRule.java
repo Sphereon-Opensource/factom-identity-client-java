@@ -1,5 +1,6 @@
 package org.blockchain_innovation.factom.identiy.did.parse;
 
+import did.parser.ParserException;
 import org.blockchain_innovation.factom.client.api.ops.StringUtils;
 
 import static org.blockchain_innovation.factom.identiy.did.DIDVersion.FACTOM_V1_JSON;
@@ -20,8 +21,12 @@ public class FactomMethodSpecificIdRule extends AbstractGenericRule<String> {
         if (StringUtils.isEmpty(getDidUrl())) {
             throw new RuleException("A Factom DID cannot have an empty DID scheme");
         }
-
-        String methodSpecificId = FACTOM_V1_JSON.getMethodSpecificId(getDidUrl());
+        String methodSpecificId;
+        try {
+            methodSpecificId = FACTOM_V1_JSON.getMethodSpecificId(getDidUrl());
+        } catch (ParserException e){
+            methodSpecificId = "";
+        }
         if (StringUtils.isEmpty(methodSpecificId)) {
             throw new RuleException("Invalid Factom DID specified: %s", getDidUrl());
         }

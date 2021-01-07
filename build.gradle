@@ -9,8 +9,8 @@ version '0.3.0-SNAPSHOT'
 
 ext {
     // the password needs to be specified via command line
-    repoUser = project.hasProperty('repoUser') ? project.getProperty('repoUser') : credentials.nexusUser
-    repoPass = project.hasProperty('repoPass') ? project.getProperty('repoPass') : credentials.nexusPassword
+    //repoUser = project.hasProperty('repoUser') ? project.getProperty('repoUser') : credentials.nexusUser
+    //repoPass = project.hasProperty('repoPass') ? project.getProperty('repoPass') : credentials.nexusPassword
 }
 
 sourceCompatibility = 8
@@ -27,7 +27,7 @@ configurations.all {
     resolutionStrategy.cacheChangingModulesFor 0, 'seconds'
 
 }
-/*
+
 
 allprojects {
     apply plugin: "maven"
@@ -49,7 +49,6 @@ allprojects {
     }
 }
 
-*/
 
 publishing {
     publications {
@@ -87,10 +86,10 @@ publishing {
             def releasesRepoUrl = "https://nexus.qa.sphereon.com/repository/sphereon-opensource-releases"
             def snapshotsRepoUrl = "https://nexus.qa.sphereon.com/repository/sphereon-opensource-snapshots"
             url = version.endsWith('SNAPSHOT') ? snapshotsRepoUrl : releasesRepoUrl
-            credentials {
+            /*credentials {
                 username project.repoUser
                 password project.repoPass
-            }
+            }*/
         }
         mavenLocal()
     }
@@ -98,9 +97,9 @@ publishing {
 
 
 dependencies {
-    compile 'org.blockchain-innovation.factom.client:factom-client-api:0.3.0-SNAPSHOT'
-    compile 'org.blockchain-innovation.factom.client:factom-client-impl:0.3.0-SNAPSHOT'
-    compile 'org.blockchain-innovation.factom.client:factom-client-offline-signing:0.3.0-SNAPSHOT'
+    compile 'org.blockchain-innovation.factom.client:factom-client-api:0.3.1-SNAPSHOT'
+    compile 'org.blockchain-innovation.factom.client:factom-client-impl:0.3.1-SNAPSHOT'
+    compile 'org.blockchain-innovation.factom.client:factom-client-offline-signing:0.3.1-SNAPSHOT'
     compile group: 'decentralized-identity', name: 'did-common-java', version: '0.2-SNAPSHOT'
     compile group: 'org.factomprotocol.identity', name: 'factom-did-models-java-gson', version: '0.3.0-SNAPSHOT'
     compile "javax.json.bind:javax.json.bind-api:1.0.0-RC2"

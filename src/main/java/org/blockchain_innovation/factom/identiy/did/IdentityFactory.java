@@ -3,6 +3,7 @@ package org.blockchain_innovation.factom.identiy.did;
 import did.DIDDocument;
 import did.DIDURL;
 import did.PublicKey;
+import did.parser.ParserException;
 import org.blockchain_innovation.factom.client.api.errors.FactomRuntimeException;
 import org.blockchain_innovation.factom.client.api.ops.Encoding;
 import org.blockchain_innovation.factom.identiy.did.entry.CreateIdentityContentEntry;
@@ -62,7 +63,7 @@ public class IdentityFactory {
         return identityResponse;
     }
 
-    public DIDDocument toDid(String identifier, IdentityResponse identityResponse) throws RuleException {
+    public DIDDocument toDid(String identifier, IdentityResponse identityResponse) throws RuleException, ParserException {
         String did = identifier;
         if (!identifier.startsWith("did:")) {
             did = "did:factom:" + identifier;

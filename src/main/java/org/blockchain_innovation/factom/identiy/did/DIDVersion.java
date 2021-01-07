@@ -2,6 +2,7 @@ package org.blockchain_innovation.factom.identiy.did;
 
 import did.DID;
 import did.DIDURL;
+import did.parser.ParserException;
 
 public enum DIDVersion {
     // This is a wrapper around Factom chains denoted as "IdentityChain" in the 1st external Id.
@@ -23,20 +24,26 @@ public enum DIDVersion {
     }
 
     public void assertFactomMethod(String didUrl) {
-        if (!method.equals(getDid(didUrl).getMethod())) {
+        String didUrlMethod;
+        try {
+            didUrlMethod = getDid(didUrl).getMethod();
+        } catch (ParserException e){
+            throw new DIDRuntimeException("Could not parse DID URL: " + didUrl);
+        }
+        if (!method.equals(didUrlMethod)) {
             throw new DIDRuntimeException("Method of DID URL is not supported by this version of Factom DIDs: " + didUrl);
         }
     }
 
-    public String getMethodSpecificId(String didUrl) {
+    public String getMethodSpecificId(String didUrl) throws ParserException {
         return getDid(didUrl).getMethodSpecificId();
     }
 
-    public DIDURL getDidUrl(String didUrl) {
+    public DIDURL getDidUrl(String didUrl) throws ParserException {
         return DIDURL.fromString(didUrl);
     }
 
-    public DID getDid(String didUrl) {
+    public DID getDid(String didUrl) throws ParserException {
         return getDidUrl(didUrl).getDid();
     }
 

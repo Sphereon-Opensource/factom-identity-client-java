@@ -1,3 +1,4 @@
+import did.parser.ParserException;
 import org.blockchain_innovation.factom.client.api.model.Address;
 import org.blockchain_innovation.factom.client.api.model.response.CommitAndRevealChainResponse;
 import org.blockchain_innovation.factom.client.api.model.response.CommitAndRevealEntryResponse;
@@ -63,7 +64,7 @@ public class IdentityChainTest extends AbstractIdentityTest {
     }
 
     @Test
-    public void testEntries() throws RuleException {
+    public void testEntries() throws RuleException, ParserException {
         List<FactomIdentityEntry<?>> identityEntries = lowLevelIdentityClient.getAllEntriesByIdentifier("did:factom:" + TEST_IDENTITY_CHAINID, EntryValidation.IGNORE_ERROR);
         assertNotNull(identityEntries);
         assertTrue(identityEntries.size() > 1);

@@ -1,5 +1,6 @@
 package org.blockchain_innovation.factom.identiy.did;
 
+import did.parser.ParserException;
 import org.blockchain_innovation.factom.client.api.EntryApi;
 import org.blockchain_innovation.factom.client.api.errors.FactomRuntimeException;
 import org.blockchain_innovation.factom.client.api.model.Address;
@@ -51,7 +52,7 @@ public class LowLevelIdentityClient {
      * @param validate   Validate the entries
      * @return
      */
-    public List<FactomIdentityEntry<?>> getAllEntriesByIdentifier(String identifier, EntryValidation validate) throws RuleException {
+    public List<FactomIdentityEntry<?>> getAllEntriesByIdentifier(String identifier, EntryValidation validate) throws RuleException, ParserException {
         return getAllEntriesByIdentifier(identifier, validate, Optional.empty(), Optional.empty());
     }
 
@@ -65,7 +66,7 @@ public class LowLevelIdentityClient {
      * @return
      * @throws RuleException
      */
-    public List<FactomIdentityEntry<?>> getAllEntriesByIdentifier(String identifier, EntryValidation validate, Optional<Long> maxHeight, Optional<Long> maxTimestamp) throws RuleException {
+    public List<FactomIdentityEntry<?>> getAllEntriesByIdentifier(String identifier, EntryValidation validate, Optional<Long> maxHeight, Optional<Long> maxTimestamp) throws RuleException, ParserException {
         List<FactomIdentityEntry<?>> entries = new ArrayList<>();
         String chainId = identifier;
         if (identifier.startsWith("did:factom:")) {
@@ -103,7 +104,7 @@ public class LowLevelIdentityClient {
                 try {
                     entries.add(ENTRY_FACTORY.from(entry, blockInfo, validate));
                 } catch (RuleException re) {
-
+                    re.printStackTrace();
                 }
             }
         }
