@@ -72,7 +72,7 @@ public class LowLevelIdentityClient {
         if (identifier.startsWith("did:factom:")) {
             String methodSpecificId = DIDVersion.FACTOM_V1_JSON.getMethodSpecificId(identifier);
             String[] parts = methodSpecificId.split(":");
-            if(parts.length > 1 && parts[1].length() == 64){
+            if (parts.length > 1 && parts[1].length() == 64) {
                 chainId = parts[1];
             } else {
                 chainId = parts[0];
@@ -105,13 +105,7 @@ public class LowLevelIdentityClient {
                                 .setChainId(entryResponse.getChainId())
                                 .setExternalIds(entryResponse.getExtIds())
                                 .setContent(entryResponse.getContent()));
-
-
-                try {
-                    entries.add(ENTRY_FACTORY.from(entry, blockInfo, validate));
-                } catch (RuleException re) {
-                    re.printStackTrace();
-                }
+                entries.add(ENTRY_FACTORY.from(entry, blockInfo, validate));
             }
         }
         if (entries.size() > 1) {
