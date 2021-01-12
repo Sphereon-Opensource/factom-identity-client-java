@@ -106,11 +106,21 @@ public class CreateFactomDidRequest {
             return this;
         }
 
-        public CreateFactomDidRequest build() {
+        public CreateFactomDidRequest build() throws IncompleteRequestException {
             if (this.service == null) {
                 this.service = Collections.emptyList();
             }
+            this.assertComplete();
             return new CreateFactomDidRequest(didVersion, networkName, managementKey, didKey, service, nonce, tags.toArray(new String[0]));
+        }
+
+        private void assertComplete() throws IncompleteRequestException {
+            if(this.didKey == null || this.didKey.size() == 0){
+                throw new IncompleteRequestException("At least one DID key is required to create a new DID");
+            }
+            if(this.managementKey == null || this.managementKey.size() == 0){
+                throw new IncompleteRequestException("At least one management key is required to create a new DID");
+            }
         }
     }
 }
