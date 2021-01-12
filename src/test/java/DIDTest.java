@@ -1,16 +1,12 @@
-import com.google.gson.Gson;
 import com.google.gson.stream.JsonReader;
 import did.DIDDocument;
 import did.parser.ParserException;
-import org.blockchain_innovation.factom.client.api.json.JsonConverter;
-import org.blockchain_innovation.factom.client.impl.json.gson.JsonConverterGSON;
 import org.blockchain_innovation.factom.client.api.model.Address;
 import org.blockchain_innovation.factom.identiy.did.DIDVersion;
 import org.blockchain_innovation.factom.identiy.did.entry.CreateFactomDIDEntry;
 import org.blockchain_innovation.factom.identiy.did.entry.EntryValidation;
 import org.blockchain_innovation.factom.identiy.did.entry.FactomIdentityEntry;
 import org.blockchain_innovation.factom.identiy.did.entry.ResolvedFactomDIDEntry;
-import org.blockchain_innovation.factom.identiy.did.json.RegisterJsonMappings;
 import org.blockchain_innovation.factom.identiy.did.parse.RuleException;
 import org.blockchain_innovation.factom.identiy.did.request.CreateFactomDidRequest;
 import org.blockchain_innovation.factom.identiy.did.request.CreateKeyRequest;
@@ -20,21 +16,19 @@ import org.factomprotocol.identity.did.model.FactomDidContent;
 import org.factomprotocol.identity.did.model.IdentityResponse;
 import org.factomprotocol.identity.did.model.KeyPurpose;
 import org.factomprotocol.identity.did.model.KeyType;
-import org.factomprotocol.identity.did.model.Service;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.FileReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
 
@@ -82,7 +76,8 @@ public class DIDTest extends AbstractIdentityTest {
     }
 
     @Test
-    public void createFactomDID() throws ParserException, RuleException, MalformedURLException {
+    @Disabled
+    public void createFactomDID() throws MalformedURLException {
         CreateKeyRequest managementKey = new CreateKeyRequest.Builder()
                 .type(KeyType.ED25519VERIFICATIONKEY)
                 .keyIdentifier("management-0")
@@ -113,7 +108,8 @@ public class DIDTest extends AbstractIdentityTest {
                 .tag("did")
                 .build();
         ResolvedFactomDIDEntry<FactomDidContent> content = identityClient.create(createRequest, new Address("Es4JHJ7T2E34j2Xqg84jWZRvgJ1cBtZZMseL2GxaEwJ7PigV23dh"));
-        String didURL = content.getContent().getDidKey().get(0).getController();
+        DidKey didKeyResult = content.getContent().getDidKey().get(0);
+        assertNotNull(didKeyResult);
     }
 
     @Test
