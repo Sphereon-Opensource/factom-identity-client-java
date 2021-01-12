@@ -54,4 +54,5 @@ public class ValueEnumMapper<T extends Enum<?>> implements JsonbAdapter<T, Strin
 
 
 
+
 }

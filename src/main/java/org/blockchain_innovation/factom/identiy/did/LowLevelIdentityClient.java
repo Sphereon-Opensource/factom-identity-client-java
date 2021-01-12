@@ -70,7 +70,13 @@ public class LowLevelIdentityClient {
         List<FactomIdentityEntry<?>> entries = new ArrayList<>();
         String chainId = identifier;
         if (identifier.startsWith("did:factom:")) {
-            chainId = DIDVersion.FACTOM_V1_JSON.getMethodSpecificId(identifier);
+            String methodSpecificId = DIDVersion.FACTOM_V1_JSON.getMethodSpecificId(identifier);
+            String[] parts = methodSpecificId.split(":");
+            if(parts.length > 1 && parts[1].length() == 64){
+                chainId = parts[1];
+            } else {
+                chainId = parts[0];
+            }
         }
         List<EntryBlockResponse> entryBlockResponses = getEntryApi().allEntryBlocks(chainId).join();
         for (EntryBlockResponse entryBlockResponse : entryBlockResponses) {

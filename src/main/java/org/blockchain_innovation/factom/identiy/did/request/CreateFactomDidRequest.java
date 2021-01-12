@@ -4,7 +4,6 @@ import org.blockchain_innovation.factom.identiy.did.DIDVersion;
 import org.blockchain_innovation.factom.identiy.did.entry.CreateFactomDIDEntry;
 import org.factomprotocol.identity.did.model.DidMethodVersion;
 import org.factomprotocol.identity.did.model.FactomDidContent;
-import org.factomprotocol.identity.did.model.Service;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -52,11 +51,8 @@ public class CreateFactomDidRequest {
                         .collect(Collectors.toList()))
                 .managementKey(this.managementKey.stream().map(key -> key.toManagementKey(did))
                         .collect(Collectors.toList()))
-                .service(this.service.stream().map(didService -> new Service()
-                        .id(did + '#' + didService.getServiceIdentifier())
-                        .type(didService.getType())
-                        .serviceEndpoint(didService.getServiceEndpoint().toString())
-                ).collect(Collectors.toList()));
+                .service(this.service.stream().map(didService -> didService.toService(did))
+                        .collect(Collectors.toList()));
     }
 
     public static final class Builder {

@@ -32,21 +32,21 @@ public class CreateKeyRequest {
         this.bip44 = bip44;
     }
 
-    public DidKey toDidKey(String did) {
+    public DidKey toDidKey(String controller) {
         return new DidKey()
-                .id(did + '#' + keyIdentifier)
+                .id(controller + '#' + keyIdentifier)
                 .type(type)
                 .publicKeyBase58(publicKeyBase58)
                 .priorityRequirement(priorityRequirement)
                 .purpose(purpose)
                 .bip44(bip44)
-                .controller(did);
+                .controller(controller);
     }
 
-    public ManagementKey toManagementKey(String did) {
+    public ManagementKey toManagementKey(String controller) {
         return new ManagementKey()
-                .controller(did)
-                .id(did + '#' + keyIdentifier)
+                .controller(controller)
+                .id(controller + '#' + keyIdentifier)
                 .publicKeyBase58(publicKeyBase58)
                 .type(type)
                 .bip44(bip44)

@@ -105,7 +105,7 @@ dependencies {
     compile "javax.json.bind:javax.json.bind-api:1.0.0-RC2"
     compile 'net.i2p.crypto:eddsa:0.3.0'
     testCompile 'org.blockchain-innovation.factom.client:logger-slf4j:0.3.0-SNAPSHOT'
-    testCompile 'org.blockchain-innovation.factom.client:json-converter-jee:0.3.0-SNAPSHOT'
+    testCompile 'org.blockchain-innovation.factom.client:json-converter-gson:0.3.0-SNAPSHOT'
     testCompile "org.glassfish:javax.json:1.1.2"
     testCompile "org.eclipse:yasson:1.0.1"
     testImplementation("org.junit.jupiter:junit-jupiter-api:5.6.1")
