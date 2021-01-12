@@ -61,7 +61,7 @@ public class IdentityClient {
     }
 
     public ResolvedFactomDIDEntry<FactomDidContent> create(CreateFactomDidRequest createRequest, Address ecAddress) {
-        FactomDidContent factomDidContentRequest = createRequest.getFactomDidContent();
+        FactomDidContent factomDidContentRequest = createRequest.toFactomDidContent();
         CreateFactomDIDEntry createEntry = new CreateFactomDIDEntry(
                 createRequest.getDidVersion(),
                 factomDidContentRequest,

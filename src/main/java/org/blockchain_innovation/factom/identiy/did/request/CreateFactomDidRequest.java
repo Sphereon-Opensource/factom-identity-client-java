@@ -42,7 +42,7 @@ public class CreateFactomDidRequest {
         return this.didVersion;
     }
 
-    public FactomDidContent getFactomDidContent() {
+    public FactomDidContent toFactomDidContent() {
         String chainId = new CreateFactomDIDEntry(this.didVersion, null, this.nonce, this.tags).getChainId();
         String did = this.networkName == null ? "did:factom:" + chainId : "did:factom:" + this.networkName + ':' + chainId;
         return new FactomDidContent()

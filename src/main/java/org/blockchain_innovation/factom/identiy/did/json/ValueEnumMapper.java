@@ -50,9 +50,4 @@ public class ValueEnumMapper<T extends Enum<?>> implements JsonbAdapter<T, Strin
     private Class<T> getEnumType() {
         return tClass;
     }
-
-
-
-
-
 }
