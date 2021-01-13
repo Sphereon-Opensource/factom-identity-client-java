@@ -9,8 +9,8 @@ version '0.3.0-SNAPSHOT'
 
 ext {
     // the password needs to be specified via command line
-    repoUser = project.hasProperty('repoUser') ? project.getProperty('repoUser') : credentials.nexusUser
-    repoPass = project.hasProperty('repoPass') ? project.getProperty('repoPass') : credentials.nexusPassword
+    /*repoUser = project.hasProperty('repoUser') ? project.getProperty('repoUser') : credentials.nexusUser
+    repoPass = project.hasProperty('repoPass') ? project.getProperty('repoPass') : credentials.nexusPassword*/
 }
 
 sourceCompatibility = 8
@@ -86,10 +86,10 @@ publishing {
             def releasesRepoUrl = "https://nexus.qa.sphereon.com/repository/sphereon-opensource-releases"
             def snapshotsRepoUrl = "https://nexus.qa.sphereon.com/repository/sphereon-opensource-snapshots"
             url = version.endsWith('SNAPSHOT') ? snapshotsRepoUrl : releasesRepoUrl
-            credentials {
+            /*credentials {
                 username project.repoUser
                 password project.repoPass
-            }
+            }*/
         }
         mavenLocal()
     }
@@ -101,9 +101,9 @@ dependencies {
     compile 'org.blockchain-innovation.factom.client:factom-client-impl:0.3.0-SNAPSHOT'
     compile 'org.blockchain-innovation.factom.client:factom-client-offline-signing:0.3.0-SNAPSHOT'
     compile group: 'decentralized-identity', name: 'did-common-java', version: '0.2-SNAPSHOT'
-    compile group: 'org.factomprotocol.identity', name: 'factom-did-models-java-gson', version: '0.3.0-SNAPSHOT'
     compile "javax.json.bind:javax.json.bind-api:1.0.0-RC2"
     compile 'net.i2p.crypto:eddsa:0.3.0'
+    testCompile group: 'org.factomprotocol.identity', name: 'factom-did-models-java-gson', version: '0.3.0-SNAPSHOT'
     testCompile 'org.blockchain-innovation.factom.client:logger-slf4j:0.3.0-SNAPSHOT'
     testCompile 'org.blockchain-innovation.factom.client:json-converter-gson:0.3.0-SNAPSHOT'
     testImplementation("org.junit.jupiter:junit-jupiter-api:5.6.1")
