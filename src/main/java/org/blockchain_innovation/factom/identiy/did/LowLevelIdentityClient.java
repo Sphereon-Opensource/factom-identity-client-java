@@ -218,7 +218,9 @@ public class LowLevelIdentityClient {
 
     private String getChainIdFrom(String identifier) throws ParserException {
         String chainId = identifier;
-        if (identifier.startsWith("did:factom:")) {
+        if (identifier == null) {
+            throw new DIDRuntimeException.InvalidIdentifierException("Identifier must be non-null.");
+        } else if (identifier.startsWith("did:factom:")) {
             String methodSpecificId = DIDVersion.FACTOM_V1_JSON.getMethodSpecificId(identifier);
             List<String> parts = Arrays.asList(methodSpecificId.split(":"));
             Collections.reverse(parts);
