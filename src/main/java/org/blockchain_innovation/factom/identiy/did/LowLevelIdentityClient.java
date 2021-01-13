@@ -68,16 +68,7 @@ public class LowLevelIdentityClient {
      */
     public List<FactomIdentityEntry<?>> getAllEntriesByIdentifier(String identifier, EntryValidation validate, Optional<Long> maxHeight, Optional<Long> maxTimestamp) throws RuleException, ParserException {
         List<FactomIdentityEntry<?>> entries = new ArrayList<>();
-        String chainId = identifier;
-        if (identifier.startsWith("did:factom:")) {
-            String methodSpecificId = DIDVersion.FACTOM_V1_JSON.getMethodSpecificId(identifier);
-            String[] parts = methodSpecificId.split(":");
-            if (parts.length > 1 && parts[1].length() == 64) {
-                chainId = parts[1];
-            } else {
-                chainId = parts[0];
-            }
-        }
+        String chainId = getChainIdFrom(identifier);
         List<EntryBlockResponse> entryBlockResponses = getEntryApi().allEntryBlocks(chainId).join();
         for (EntryBlockResponse entryBlockResponse : entryBlockResponses) {
             EntryBlockResponse.Header header = entryBlockResponse.getHeader();
@@ -223,5 +214,22 @@ public class LowLevelIdentityClient {
      */
     public CommitAndRevealEntryResponse deactivate(DeactivateFactomDIDEntry deactivateEntry, Address ecAddress) {
         return getEntryApi().commitAndRevealEntry(deactivateEntry.toEntry(Optional.empty()), ecAddress).join();
+    }
+
+    private String getChainIdFrom(String identifier) throws ParserException {
+        String chainId = identifier;
+        if (identifier.startsWith("did:factom:")) {
+            String methodSpecificId = DIDVersion.FACTOM_V1_JSON.getMethodSpecificId(identifier);
+            List<String> parts = Arrays.asList(methodSpecificId.split(":"));
+            Collections.reverse(parts);
+            chainId = parts.stream().filter(part -> part.length() == 64)
+                    .findFirst()
+                    .orElseThrow(() ->
+                            new DIDRuntimeException.InvalidIdentifierException(
+                                    "Could not parse chainId from identifier: " + identifier
+                            )
+                    );
+        }
+        return chainId;
     }
 }

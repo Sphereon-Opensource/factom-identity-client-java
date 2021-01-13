@@ -22,4 +22,10 @@ public class DIDRuntimeException extends FactomRuntimeException {
             super(cause);
         }
     }
+
+    public static class InvalidIdentifierException extends DIDRuntimeException {
+        public InvalidIdentifierException(String message){
+            super(message);
+        }
+    }
 }
