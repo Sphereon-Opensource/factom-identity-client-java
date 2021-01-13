@@ -12,7 +12,10 @@ import javax.json.bind.adapter.JsonbAdapter;
 public class RegisterJsonMappings {
     public static JsonConverter register(JsonConverter converter) {
 
-        converter.addAdapter(Service.class, new CustomServiceSerializer());
+        if(converter.getName().equalsIgnoreCase("GSON")){
+            // TODO: Add support for Service class serialization in non-GSON converters.
+            converter.addAdapter(Service.class, new CustomServiceSerializer());
+        }
 
         if (!converter.getName().equalsIgnoreCase("JEE")) {
             // Non JEE converters don't need this specialized handling
