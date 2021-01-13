@@ -5,6 +5,7 @@ import org.blockchain_innovation.factom.identiy.did.entry.CreateFactomDIDEntry;
 import org.factomprotocol.identity.did.model.DidMethodVersion;
 import org.factomprotocol.identity.did.model.FactomDidContent;
 
+import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -13,19 +14,19 @@ import java.util.stream.Collectors;
 
 public class CreateFactomDidRequest {
     private final DIDVersion didVersion;
-    private final List<CreateKeyRequest> managementKey;
-    private final List<CreateKeyRequest> didKey;
-    private final List<CreateServiceRequest> service;
+    private final List<CreateKeyRequest> managementKeys;
+    private final List<CreateKeyRequest> didKeys;
+    private final List<CreateServiceRequest> services;
     private final String[] tags;
     private final String nonce;
     private final String networkName;
 
-    private CreateFactomDidRequest(DIDVersion didVersion, String networkName, List<CreateKeyRequest> managementKey, List<CreateKeyRequest> didKey, List<CreateServiceRequest> service, String nonce, String... tags) {
+    private CreateFactomDidRequest(DIDVersion didVersion, String networkName, List<CreateKeyRequest> managementKeys, List<CreateKeyRequest> didKey, List<CreateServiceRequest> service, String nonce, String... tags) {
         this.didVersion = didVersion;
         this.networkName = networkName;
-        this.managementKey = managementKey;
-        this.didKey = didKey;
-        this.service = service;
+        this.managementKeys = managementKeys;
+        this.didKeys = didKey;
+        this.services = service;
         this.nonce = nonce;
         this.tags = tags;
     }
@@ -47,19 +48,19 @@ public class CreateFactomDidRequest {
         String did = this.networkName == null ? "did:factom:" + chainId : "did:factom:" + this.networkName + ':' + chainId;
         return new FactomDidContent()
                 .didMethodVersion(DidMethodVersion.fromValue(didVersion.getSchemaVersion()))
-                .didKey(this.didKey.stream().map(key -> key.toDidKey(did))
+                .didKey(this.didKeys.stream().map(key -> key.toDidKey(did))
                         .collect(Collectors.toList()))
-                .managementKey(this.managementKey.stream().map(key -> key.toManagementKey(did))
+                .managementKey(this.managementKeys.stream().map(key -> key.toManagementKey(did))
                         .collect(Collectors.toList()))
-                .service(this.service.stream().map(didService -> didService.toService(did))
+                .service(this.services.stream().map(didService -> didService.toService(did))
                         .collect(Collectors.toList()));
     }
 
     public static final class Builder {
         private DIDVersion didVersion;
-        private List<CreateKeyRequest> managementKey;
-        private List<CreateKeyRequest> didKey;
-        private List<CreateServiceRequest> service;
+        private List<CreateKeyRequest> managementKeys;
+        private List<CreateKeyRequest> didKeys;
+        private List<CreateServiceRequest> services;
         private List<String> tags;
         private String nonce;
         private String networkName;
@@ -72,18 +73,45 @@ public class CreateFactomDidRequest {
             return this;
         }
 
-        public Builder managementKey(List<CreateKeyRequest> managementKey) {
-            this.managementKey = managementKey;
+        public Builder managementKeys(List<CreateKeyRequest> managementKeys) {
+            this.managementKeys = managementKeys;
             return this;
         }
 
-        public Builder didKey(List<CreateKeyRequest> didKey) {
-            this.didKey = didKey;
+        public Builder managementKey(CreateKeyRequest managementKey) {
+            if (this.managementKeys == null) {
+                this.managementKeys = new ArrayList<>(Arrays.asList(managementKey));
+            } else {
+                this.managementKeys.add(managementKey);
+            }
             return this;
         }
 
-        public Builder service(List<CreateServiceRequest> service) {
-            this.service = service;
+        public Builder didKeys(List<CreateKeyRequest> didKeys) {
+            this.didKeys = didKeys;
+            return this;
+        }
+
+        public Builder didKey(CreateKeyRequest didKey) {
+            if (this.didKeys == null) {
+                this.didKeys = new ArrayList<>(Arrays.asList(didKey));
+            } else {
+                this.didKeys.add(didKey);
+            }
+            return this;
+        }
+
+        public Builder services(List<CreateServiceRequest> services) {
+            this.services = services;
+            return this;
+        }
+
+        public Builder service(CreateServiceRequest service) {
+            if (this.services == null) {
+                this.services = new ArrayList<>(Arrays.asList(service));
+            } else {
+                this.services.add(service);
+            }
             return this;
         }
 
@@ -107,18 +135,26 @@ public class CreateFactomDidRequest {
         }
 
         public CreateFactomDidRequest build() throws IncompleteRequestException {
-            if (this.service == null) {
-                this.service = Collections.emptyList();
+            if (this.services == null) {
+                this.services = Collections.emptyList();
             }
             this.assertComplete();
-            return new CreateFactomDidRequest(didVersion, networkName, managementKey, didKey, service, nonce, tags.toArray(new String[0]));
+            return new CreateFactomDidRequest(
+                    didVersion,
+                    networkName,
+                    managementKeys,
+                    didKeys,
+                    services,
+                    nonce,
+                    tags.toArray(new String[0])
+            );
         }
 
         private void assertComplete() throws IncompleteRequestException {
-            if(this.didKey == null || this.didKey.size() == 0){
+            if (this.didKeys == null || this.didKeys.size() == 0) {
                 throw new IncompleteRequestException("At least one DID key is required to create a new DID");
             }
-            if(this.managementKey == null || this.managementKey.size() == 0){
+            if (this.managementKeys == null || this.managementKeys.size() == 0) {
                 throw new IncompleteRequestException("At least one management key is required to create a new DID");
             }
         }
