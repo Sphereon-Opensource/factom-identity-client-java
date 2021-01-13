@@ -4,11 +4,10 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonSerializationContext;
 import com.google.gson.JsonSerializer;
+import com.google.gson.JsonSyntaxException;
 import org.factomprotocol.identity.did.model.Service;
 
 import java.lang.reflect.Type;
-import java.util.HashMap;
-import java.util.Map;
 
 public class CustomServiceSerializer implements JsonSerializer<Service> {
 
@@ -20,6 +19,9 @@ public class CustomServiceSerializer implements JsonSerializer<Service> {
         jsonObject.add("serviceEndpoint", jsonSerializationContext.serialize(service.getServiceEndpoint()));
         jsonObject.add("priorityRequirement", jsonSerializationContext.serialize(service.getPriorityRequirement()));
         service.keySet().forEach(key -> {
+            if (jsonObject.has(key)){
+                throw new JsonSyntaxException("Service object has multiple values for key: " + key);
+            }
             jsonObject.add(key, jsonSerializationContext.serialize(service.get(key)));
         });
         return jsonObject;
