@@ -25,7 +25,7 @@ public class FactomMethodSpecificIdRule extends AbstractGenericRule<String> {
         try {
             methodSpecificId = FACTOM_V1_JSON.getMethodSpecificId(getDidUrl());
         } catch (ParserException e){
-            methodSpecificId = "";
+            throw new RuleException(e);
         }
         if (StringUtils.isEmpty(methodSpecificId)) {
             throw new RuleException("Invalid Factom DID specified: %s", getDidUrl());
