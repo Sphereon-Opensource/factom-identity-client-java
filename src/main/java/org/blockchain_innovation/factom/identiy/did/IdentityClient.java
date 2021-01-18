@@ -3,6 +3,7 @@ package org.blockchain_innovation.factom.identiy.did;
 import foundation.identity.did.DIDDocument;
 import foundation.identity.did.parser.ParserException;
 import org.blockchain_innovation.factom.client.api.FactomdClient;
+import org.blockchain_innovation.factom.client.api.SigningMode;
 import org.blockchain_innovation.factom.client.api.WalletdClient;
 import org.blockchain_innovation.factom.client.api.model.Address;
 import org.blockchain_innovation.factom.client.api.model.response.CommitAndRevealChainResponse;
@@ -102,7 +103,7 @@ public class IdentityClient {
             throw new DIDRuntimeException("You cannot reconfigure an identity client. Please create a new instance");
         }
         this.factomdClient = Networks.factomd(getNetworkName());
-        this.walletdClient = Networks.walletd(getNetworkName());
+        this.walletdClient = Networks.walletd(getNetworkName(), Optional.of(SigningMode.fromModeString((String) properties.get("signing-mode"))));
         EntryApiImpl entryClient = new EntryApiImpl();
         entryClient.setFactomdClient(factomdClient);
         entryClient.setWalletdClient(walletdClient);
