@@ -1,4 +1,4 @@
-import did.parser.ParserException;
+import foundation.identity.did.parser.ParserException;
 import org.blockchain_innovation.factom.client.api.model.Address;
 import org.blockchain_innovation.factom.client.api.model.response.CommitAndRevealChainResponse;
 import org.blockchain_innovation.factom.client.api.model.response.CommitAndRevealEntryResponse;

@@ -1,6 +1,6 @@
 package org.blockchain_innovation.factom.identiy.did;
 
-import did.parser.ParserException;
+import foundation.identity.did.parser.ParserException;
 import org.blockchain_innovation.factom.client.api.EntryApi;
 import org.blockchain_innovation.factom.client.api.errors.FactomRuntimeException;
 import org.blockchain_innovation.factom.client.api.model.Address;

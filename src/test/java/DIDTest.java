@@ -1,6 +1,6 @@
 import com.google.gson.stream.JsonReader;
-import did.DIDDocument;
-import did.parser.ParserException;
+import foundation.identity.did.DIDDocument;
+import foundation.identity.did.parser.ParserException;
 import org.blockchain_innovation.factom.client.api.model.Address;
 import org.blockchain_innovation.factom.identiy.did.DIDVersion;
 import org.blockchain_innovation.factom.identiy.did.entry.CreateFactomDIDEntry;
@@ -26,6 +26,7 @@ import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.MalformedURLException;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.Arrays;
 import java.util.Collections;
@@ -76,7 +77,7 @@ public class DIDTest extends AbstractIdentityTest {
     }
 
     @Test
-    @Disabled
+    //@Disabled
     public void createFactomDID() throws MalformedURLException {
         CreateKeyRequest managementKey = new CreateKeyRequest.Builder()
                 .type(KeyType.ED25519VERIFICATIONKEY)
@@ -99,9 +100,9 @@ public class DIDTest extends AbstractIdentityTest {
                 .build();
         CreateFactomDidRequest createRequest = new CreateFactomDidRequest.Builder()
                 .didVersion(DIDVersion.FACTOM_V1_JSON)
-                .managementKey(Collections.singletonList(managementKey))
-                .didKey(Collections.singletonList(didKey))
-                .service(Collections.singletonList(service))
+                .managementKeys(Collections.singletonList(managementKey))
+                .didKeys(Collections.singletonList(didKey))
+                .services(Collections.singletonList(service))
                 .networkName("testnet")
                 .nonce("test-" + System.currentTimeMillis())
                 .tag("test")
@@ -113,7 +114,7 @@ public class DIDTest extends AbstractIdentityTest {
     }
 
     @Test
-    public void getDidDocumentFromIdentityChain() throws RuleException, ParserException {
+    public void getDidDocumentFromIdentityChain() throws RuleException, ParserException, URISyntaxException {
 
         List<FactomIdentityEntry<?>> allEntries = lowLevelIdentityClient.getAllEntriesByIdentifier("did:factom:" + TEST_IDENTITY_CHAINID, EntryValidation.THROW_ERROR);
         assertNotNull(allEntries);

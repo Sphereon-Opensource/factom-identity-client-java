@@ -1,8 +1,8 @@
 package org.blockchain_innovation.factom.identiy.did;
 
-import did.DID;
-import did.DIDURL;
-import did.parser.ParserException;
+import foundation.identity.did.DID;
+import foundation.identity.did.DIDURL;
+import foundation.identity.did.parser.ParserException;
 
 public enum DIDVersion {
     // This is a wrapper around Factom chains denoted as "IdentityChain" in the 1st external Id.

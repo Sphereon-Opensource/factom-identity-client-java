@@ -1,7 +1,7 @@
 package org.blockchain_innovation.factom.identiy.did;
 
-import did.DIDDocument;
-import did.parser.ParserException;
+import foundation.identity.did.DIDDocument;
+import foundation.identity.did.parser.ParserException;
 import org.blockchain_innovation.factom.client.api.FactomdClient;
 import org.blockchain_innovation.factom.client.api.WalletdClient;
 import org.blockchain_innovation.factom.client.api.model.Address;
@@ -20,6 +20,7 @@ import org.factomprotocol.identity.did.model.IdentityEntry;
 import org.factomprotocol.identity.did.model.IdentityResponse;
 
 import java.io.File;
+import java.net.URISyntaxException;
 import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.List;
@@ -44,7 +45,7 @@ public class IdentityClient {
         return networkName;
     }
 
-    public DIDDocument getDidDocument(String identifier, EntryValidation entryValidation, Optional<Long> blockHeight, Optional<Long> timestamp) throws RuleException, ParserException {
+    public DIDDocument getDidDocument(String identifier, EntryValidation entryValidation, Optional<Long> blockHeight, Optional<Long> timestamp) throws RuleException, ParserException, URISyntaxException {
         return FACTORY.toDid(identifier, getIdentityResponse(identifier, entryValidation, blockHeight, timestamp));
     }
 

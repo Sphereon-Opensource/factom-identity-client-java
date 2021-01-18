@@ -1,9 +1,11 @@
 package org.blockchain_innovation.factom.identiy.did;
 
-import did.DIDDocument;
-import did.DIDURL;
-import did.PublicKey;
-import did.parser.ParserException;
+import foundation.identity.did.DIDDocument;
+import foundation.identity.did.DIDURL;
+import foundation.identity.did.PublicKey;
+import foundation.identity.did.jsonld.DIDKeywords;
+import foundation.identity.did.parser.ParserException;
+import foundation.identity.jsonld.JsonLDObject;
 import org.blockchain_innovation.factom.client.api.errors.FactomRuntimeException;
 import org.blockchain_innovation.factom.client.api.ops.Encoding;
 import org.blockchain_innovation.factom.identiy.did.entry.CreateIdentityContentEntry;
@@ -14,6 +16,9 @@ import org.factomprotocol.identity.did.model.IdentityEntry;
 import org.factomprotocol.identity.did.model.IdentityResponse;
 import org.factomprotocol.identity.did.model.Metadata;
 
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -63,7 +68,7 @@ public class IdentityFactory {
         return identityResponse;
     }
 
-    public DIDDocument toDid(String identifier, IdentityResponse identityResponse) throws RuleException, ParserException {
+    public DIDDocument toDid(String identifier, IdentityResponse identityResponse) throws RuleException, ParserException, URISyntaxException {
         String did = identifier;
         if (!identifier.startsWith("did:")) {
             did = "did:factom:" + identifier;
@@ -86,26 +91,28 @@ public class IdentityFactory {
             Map<String, Object> authAttrs = new HashMap<>();
 
 
-            keyAttrs.put(DIDDocument.JSONLD_TERM_TYPE, "Ed25519VerificationKey2018");
+            keyAttrs.put(DIDConstants.JSONLD_TERM_TYPE, "Ed25519VerificationKey2018");
+            keyAttrs.put(DIDConstants.JSONLD_TERM_ID, id);
+            keyAttrs.put(DIDKeywords.JSONLD_TERM_PUBLICKEYBASE58, b58Key);
+            keyAttrs.put(DIDKeywords.JSONLD_TERM_PUBLICKEYHEX, hexKey);
 
-            keyAttrs.put(DIDDocument.JSONLD_TERM_ID, id);
-            keyAttrs.put(DIDDocument.JSONLD_TERM_PUBLICKEYBASE58, b58Key);
-            keyAttrs.put(DIDDocument.JSONLD_TERM_PUBLICKEYHEX, hexKey);
-
-            keyAttrs.put("controller", controller);
-            authAttrs.put("controller", controller);
+            keyAttrs.put(DIDConstants.JSONLD_TERM_CONTROLLER, controller);
+            authAttrs.put(DIDConstants.JSONLD_TERM_CONTROLLER, controller);
             if (i > 0 || idPubs.size() == 1) {
                 authentications.add(id);
                 assertionMethods.add(id);
             }
-            publicKeys.add(PublicKey.build(keyAttrs).getJsonLdObject());
+            publicKeys.add(PublicKey.fromJsonObject(keyAttrs).getJsonObject());
         }
 
         // We build using the LdObjects ourselves as the convenience method does not do everything and objects are not mutable anymore
-        DIDDocument didDocument = DIDDocument.build("https://www.w3.org/ns/did/v1", didurl.getDid().getDidString(), null, null, null);
-        didDocument.setJsonLdObjectKeyValue(DIDDocument.JSONLD_TERM_AUTHENTICATION, authentications);
-        didDocument.setJsonLdObjectKeyValue(DIDDocument.JSONLD_TERM_PUBLICKEY, publicKeys);
-        didDocument.setJsonLdObjectKeyValue("assertionMethod", assertionMethods);
+        DIDDocument didDocument = DIDDocument.builder()
+                .context(new URI("https://www.w3.org/ns/did/v1"))
+                .id(new URI(didurl.getDid().getDidString()))
+                .build();
+        didDocument.setJsonObjectKeyValue(DIDKeywords.JSONLD_TERM_AUTHENTICATION, authentications);
+        didDocument.setJsonObjectKeyValue(DIDKeywords.JSONLD_TERM_PUBLICKEY, publicKeys);
+        didDocument.setJsonObjectKeyValue(DIDConstants.JSONLD_TERM_ASSERTION_METHOD, assertionMethods);
 
         return didDocument;
     }

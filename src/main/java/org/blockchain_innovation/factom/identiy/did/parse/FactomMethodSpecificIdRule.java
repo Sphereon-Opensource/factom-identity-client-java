@@ -1,6 +1,6 @@
 package org.blockchain_innovation.factom.identiy.did.parse;
 
-import did.parser.ParserException;
+import foundation.identity.did.parser.ParserException;
 import org.blockchain_innovation.factom.client.api.ops.StringUtils;
 
 import static org.blockchain_innovation.factom.identiy.did.DIDVersion.FACTOM_V1_JSON;
