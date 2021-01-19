@@ -2,15 +2,15 @@ import com.google.gson.stream.JsonReader;
 import foundation.identity.did.DIDDocument;
 import foundation.identity.did.parser.ParserException;
 import org.blockchain_innovation.factom.client.api.model.Address;
-import org.blockchain_innovation.factom.identiy.did.DIDVersion;
-import org.blockchain_innovation.factom.identiy.did.entry.CreateFactomDIDEntry;
-import org.blockchain_innovation.factom.identiy.did.entry.EntryValidation;
-import org.blockchain_innovation.factom.identiy.did.entry.FactomIdentityEntry;
-import org.blockchain_innovation.factom.identiy.did.entry.ResolvedFactomDIDEntry;
-import org.blockchain_innovation.factom.identiy.did.parse.RuleException;
-import org.blockchain_innovation.factom.identiy.did.request.CreateFactomDidRequest;
-import org.blockchain_innovation.factom.identiy.did.request.CreateKeyRequest;
-import org.blockchain_innovation.factom.identiy.did.request.CreateServiceRequest;
+import com.sphereon.factom.identity.did.DIDVersion;
+import com.sphereon.factom.identity.did.entry.CreateFactomDIDEntry;
+import com.sphereon.factom.identity.did.entry.EntryValidation;
+import com.sphereon.factom.identity.did.entry.FactomIdentityEntry;
+import com.sphereon.factom.identity.did.entry.ResolvedFactomDIDEntry;
+import com.sphereon.factom.identity.did.parse.RuleException;
+import com.sphereon.factom.identity.did.request.CreateFactomDidRequest;
+import com.sphereon.factom.identity.did.request.CreateKeyRequest;
+import com.sphereon.factom.identity.did.request.CreateServiceRequest;
 import org.factomprotocol.identity.did.model.DidKey;
 import org.factomprotocol.identity.did.model.FactomDidContent;
 import org.factomprotocol.identity.did.model.IdentityResponse;
@@ -77,7 +77,7 @@ public class DIDTest extends AbstractIdentityTest {
     }
 
     @Test
-    //@Disabled
+    @Disabled
     public void createFactomDID() throws MalformedURLException {
         CreateKeyRequest managementKey = new CreateKeyRequest.Builder()
                 .type(KeyType.ED25519VERIFICATIONKEY)

@@ -1,13 +1,17 @@
+import com.sphereon.factom.identity.did.entry.CreateIdentityContentEntry;
+import com.sphereon.factom.identity.did.entry.CreateIdentityRequestEntry;
+import com.sphereon.factom.identity.did.entry.EntryValidation;
+import com.sphereon.factom.identity.did.entry.FactomIdentityEntry;
+import com.sphereon.factom.identity.did.entry.ReplaceKeyIdentityChainEntry;
 import foundation.identity.did.parser.ParserException;
 import org.blockchain_innovation.factom.client.api.model.Address;
 import org.blockchain_innovation.factom.client.api.model.response.CommitAndRevealChainResponse;
 import org.blockchain_innovation.factom.client.api.model.response.CommitAndRevealEntryResponse;
 import org.blockchain_innovation.factom.client.api.ops.Encoding;
-import org.blockchain_innovation.factom.identiy.did.DIDVersion;
-import org.blockchain_innovation.factom.identiy.did.IdentityFactory;
-import org.blockchain_innovation.factom.identiy.did.OperationValue;
-import org.blockchain_innovation.factom.identiy.did.entry.*;
-import org.blockchain_innovation.factom.identiy.did.parse.RuleException;
+import com.sphereon.factom.identity.did.DIDVersion;
+import com.sphereon.factom.identity.did.IdentityFactory;
+import com.sphereon.factom.identity.did.OperationValue;
+import com.sphereon.factom.identity.did.parse.RuleException;
 import org.factomprotocol.identity.did.model.*;
 import org.junit.jupiter.api.Test;
 
