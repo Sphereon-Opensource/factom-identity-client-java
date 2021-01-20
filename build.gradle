@@ -31,7 +31,7 @@ configurations.all {
 
 allprojects {
     apply plugin: "maven"
-    group = "org.factomprotocol.identity"
+    group = "com.sphereon.public"
 
     repositories {
         mavenLocal()
