@@ -12,7 +12,7 @@ public class RegisterJsonMappings {
 
         if(converter.getName().equalsIgnoreCase("GSON")){
             // TODO: Add support for Service class serialization in non-GSON converters.
-            converter.addAdapter(Service.class, new CustomServiceSerializer());
+            converter.addAdapter(Service.class, new CustomServiceTypeAdapter());
         }
 
         if (!converter.getName().equalsIgnoreCase("JEE")) {
