@@ -2,6 +2,7 @@ package com.sphereon.factom.identity.did;
 
 import com.sphereon.factom.identity.did.entry.ResolvedFactomDIDEntry;
 import com.sphereon.factom.identity.did.request.CreateFactomDidRequest;
+import com.sphereon.factom.identity.did.response.DidResponse;
 import foundation.identity.did.DIDDocument;
 import foundation.identity.did.parser.ParserException;
 import org.blockchain_innovation.factom.client.api.FactomdClient;
@@ -46,13 +47,42 @@ public class IdentityClient {
     }
 
     public DIDDocument getDidDocument(String identifier, EntryValidation entryValidation, Optional<Long> blockHeight, Optional<Long> timestamp) throws RuleException, ParserException, URISyntaxException {
-        return FACTORY.toDid(identifier, getIdentityResponse(identifier, entryValidation, blockHeight, timestamp));
+        List<FactomIdentityEntry<?>> allEntries = lowLevelClient()
+                .getAllEntriesByIdentifier(identifier, entryValidation, blockHeight, timestamp);
+        try {
+            IdentityResponse identityResponse = FACTORY.toIdentity(identifier, allEntries);
+            return FACTORY.toDid(identifier, identityResponse);
+        } catch (RuleException e1) {
+            try {
+                DidResponse didResponse = FACTORY.toDidResponse(identifier, allEntries);
+                return FACTORY.toDid(identifier, didResponse);
+            } catch (RuleException e2) {
+                throw new DIDRuntimeException.InvalidIdentifierException(
+                        "Could not get DID document for identifier: " + identifier,
+                        e2
+                );
+            }
+        }
     }
 
+    public DIDDocument getDidDocumentFactomV1(String identifier,
+                                              EntryValidation entryValidation,
+                                              Optional<Long> blockHeight,
+                                              Optional<Long> timestamp) throws RuleException, ParserException, URISyntaxException {
+        List<FactomIdentityEntry<?>> allEntries = lowLevelClient()
+                .getAllEntriesByIdentifier(identifier, entryValidation, blockHeight, timestamp);
+        DidResponse didResponse = FACTORY.toDidResponse(identifier, allEntries);
+        return FACTORY.toDid(identifier, didResponse);
+    }
 
-    public IdentityResponse getIdentityResponse(String identifier, EntryValidation entryValidation, Optional<Long> blockHeight, Optional<Long> timestamp) throws RuleException, ParserException {
-        List<FactomIdentityEntry<?>> allEntries = lowLevelClient().getAllEntriesByIdentifier(identifier, entryValidation, blockHeight, timestamp);
-        return FACTORY.toIdentity(identifier, allEntries);
+    public DIDDocument getDidDocumentFactomIdentity(String identifier,
+                                                    EntryValidation entryValidation,
+                                                    Optional<Long> blockHeight,
+                                                    Optional<Long> timestamp) throws RuleException, ParserException, URISyntaxException {
+        List<FactomIdentityEntry<?>> allEntries = lowLevelClient()
+                .getAllEntriesByIdentifier(identifier, entryValidation, blockHeight, timestamp);
+        IdentityResponse identityResponse = FACTORY.toIdentity(identifier, allEntries);
+        return FACTORY.toDid(identifier, identityResponse);
     }
 
     public IdentityEntry create(CreateIdentityRequestEntry createRequest, Optional<Address> ecAddress) {
