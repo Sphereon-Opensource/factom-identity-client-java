@@ -3,7 +3,7 @@ package com.sphereon.factom.identity.did.response;
 import org.factomprotocol.identity.did.model.FactomDidContent;
 import org.factomprotocol.identity.did.model.Metadata;
 
-public class DidResponse {
+public class DidResponse implements BlockchainResponse<FactomDidContent> {
     private FactomDidContent factomDidContent;
     private Metadata metadata;
 
@@ -16,8 +16,14 @@ public class DidResponse {
         return this;
     }
 
+    @Override
     public Metadata getMetadata() {
         return metadata;
+    }
+
+    @Override
+    public FactomDidContent getContent(){
+        return factomDidContent;
     }
 
     public DidResponse metadata(Metadata metadata) {
