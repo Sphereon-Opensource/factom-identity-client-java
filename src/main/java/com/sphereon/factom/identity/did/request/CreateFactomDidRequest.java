@@ -57,7 +57,7 @@ public class CreateFactomDidRequest {
     }
 
     private String getDidURL(String chainId) {
-        if (networkName == null || Networks.MAINNET.equals(networkName)) {
+        if (networkName == null || Networks.MAINNET.equalsIgnoreCase(networkName)) {
             return "did:factom:" + chainId;
         }
         return "did:factom:" + networkName + ':' + chainId;
