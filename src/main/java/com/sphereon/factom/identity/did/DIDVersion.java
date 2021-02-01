@@ -25,25 +25,25 @@ public enum DIDVersion {
 
     public void assertFactomMethod(String didUrl) {
         String didUrlMethod;
-        try {
-            didUrlMethod = getDid(didUrl).getMethod();
-        } catch (ParserException e){
-            throw new DIDRuntimeException("Could not parse DID URL: " + didUrl);
-        }
+        didUrlMethod = getDid(didUrl).getMethod();
         if (!method.equals(didUrlMethod)) {
             throw new DIDRuntimeException("Method of DID URL is not supported by this version of Factom DIDs: " + didUrl);
         }
     }
 
-    public String getMethodSpecificId(String didUrl) throws ParserException {
+    public String getMethodSpecificId(String didUrl) {
         return getDid(didUrl).getMethodSpecificId();
     }
 
-    public DIDURL getDidUrl(String didUrl) throws ParserException {
-        return DIDURL.fromString(didUrl);
+    public DIDURL getDidUrl(String didUrl) {
+        try {
+            return DIDURL.fromString(didUrl);
+        } catch (ParserException e) {
+            throw new DIDRuntimeException.ParseException(e);
+        }
     }
 
-    public DID getDid(String didUrl) throws ParserException {
+    public DID getDid(String didUrl) {
         return getDidUrl(didUrl).getDid();
     }
 
