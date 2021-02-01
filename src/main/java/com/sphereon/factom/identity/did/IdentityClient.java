@@ -1,8 +1,12 @@
 package com.sphereon.factom.identity.did;
 
+import com.sphereon.factom.identity.did.entry.CreateFactomDIDEntry;
+import com.sphereon.factom.identity.did.entry.CreateIdentityRequestEntry;
+import com.sphereon.factom.identity.did.entry.EntryValidation;
+import com.sphereon.factom.identity.did.entry.FactomIdentityEntry;
 import com.sphereon.factom.identity.did.entry.ResolvedFactomDIDEntry;
+import com.sphereon.factom.identity.did.parse.RuleException;
 import com.sphereon.factom.identity.did.request.CreateFactomDidRequest;
-import com.sphereon.factom.identity.did.response.DidResponse;
 import foundation.identity.did.DIDDocument;
 import foundation.identity.did.parser.ParserException;
 import org.blockchain_innovation.factom.client.api.FactomdClient;
@@ -11,14 +15,8 @@ import org.blockchain_innovation.factom.client.api.model.Address;
 import org.blockchain_innovation.factom.client.api.model.response.CommitAndRevealChainResponse;
 import org.blockchain_innovation.factom.client.impl.EntryApiImpl;
 import org.blockchain_innovation.factom.client.impl.Networks;
-import com.sphereon.factom.identity.did.entry.CreateFactomDIDEntry;
-import com.sphereon.factom.identity.did.entry.CreateIdentityRequestEntry;
-import com.sphereon.factom.identity.did.entry.EntryValidation;
-import com.sphereon.factom.identity.did.entry.FactomIdentityEntry;
-import com.sphereon.factom.identity.did.parse.RuleException;
 import org.factomprotocol.identity.did.model.FactomDidContent;
 import org.factomprotocol.identity.did.model.IdentityEntry;
-import org.factomprotocol.identity.did.model.IdentityResponse;
 
 import java.io.File;
 import java.net.URISyntaxException;
@@ -49,40 +47,7 @@ public class IdentityClient {
     public DIDDocument getDidDocument(String identifier, EntryValidation entryValidation, Optional<Long> blockHeight, Optional<Long> timestamp) throws RuleException, ParserException, URISyntaxException {
         List<FactomIdentityEntry<?>> allEntries = lowLevelClient()
                 .getAllEntriesByIdentifier(identifier, entryValidation, blockHeight, timestamp);
-        try {
-            IdentityResponse identityResponse = FACTORY.toIdentity(identifier, allEntries);
-            return FACTORY.toDid(identifier, identityResponse);
-        } catch (RuleException e1) {
-            try {
-                DidResponse didResponse = FACTORY.toDidResponse(identifier, allEntries);
-                return FACTORY.toDid(identifier, didResponse);
-            } catch (RuleException e2) {
-                throw new DIDRuntimeException.InvalidIdentifierException(
-                        "Could not get DID document for identifier: " + identifier,
-                        e2
-                );
-            }
-        }
-    }
-
-    public DIDDocument getDidDocumentFactomV1(String identifier,
-                                              EntryValidation entryValidation,
-                                              Optional<Long> blockHeight,
-                                              Optional<Long> timestamp) throws RuleException, ParserException, URISyntaxException {
-        List<FactomIdentityEntry<?>> allEntries = lowLevelClient()
-                .getAllEntriesByIdentifier(identifier, entryValidation, blockHeight, timestamp);
-        DidResponse didResponse = FACTORY.toDidResponse(identifier, allEntries);
-        return FACTORY.toDid(identifier, didResponse);
-    }
-
-    public DIDDocument getDidDocumentFactomIdentity(String identifier,
-                                                    EntryValidation entryValidation,
-                                                    Optional<Long> blockHeight,
-                                                    Optional<Long> timestamp) throws RuleException, ParserException, URISyntaxException {
-        List<FactomIdentityEntry<?>> allEntries = lowLevelClient()
-                .getAllEntriesByIdentifier(identifier, entryValidation, blockHeight, timestamp);
-        IdentityResponse identityResponse = FACTORY.toIdentity(identifier, allEntries);
-        return FACTORY.toDid(identifier, identityResponse);
+        return FACTORY.toDid(identifier, FACTORY.toBlockchainResponse(identifier, allEntries));
     }
 
     public IdentityEntry create(CreateIdentityRequestEntry createRequest, Optional<Address> ecAddress) {

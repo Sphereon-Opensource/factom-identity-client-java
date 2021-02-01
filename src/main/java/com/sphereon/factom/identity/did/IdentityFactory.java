@@ -1,10 +1,14 @@
 package com.sphereon.factom.identity.did;
 
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.sphereon.factom.identity.did.entry.CreateFactomDIDEntry;
-import com.sphereon.factom.identity.did.entry.ResolvedFactomDIDEntry;
-import com.sphereon.factom.identity.did.entry.UpdateFactomDIDEntry;
+import com.sphereon.factom.identity.did.entry.CreateIdentityContentEntry;
+import com.sphereon.factom.identity.did.entry.FactomIdentityEntry;
+import com.sphereon.factom.identity.did.entry.ReplaceKeyIdentityChainEntry;
+import com.sphereon.factom.identity.did.parse.RuleException;
+import com.sphereon.factom.identity.did.response.BlockchainResponse;
 import com.sphereon.factom.identity.did.response.DidResponse;
-import foundation.identity.did.Authentication;
+import com.sphereon.factom.identity.did.response.IdentityResponse;
 import foundation.identity.did.DIDDocument;
 import foundation.identity.did.DIDURL;
 import foundation.identity.did.PublicKey;
@@ -12,14 +16,9 @@ import foundation.identity.did.jsonld.DIDKeywords;
 import foundation.identity.did.parser.ParserException;
 import org.blockchain_innovation.factom.client.api.errors.FactomRuntimeException;
 import org.blockchain_innovation.factom.client.api.ops.Encoding;
-import com.sphereon.factom.identity.did.entry.CreateIdentityContentEntry;
-import com.sphereon.factom.identity.did.entry.FactomIdentityEntry;
-import com.sphereon.factom.identity.did.entry.ReplaceKeyIdentityChainEntry;
-import com.sphereon.factom.identity.did.parse.RuleException;
 import org.factomprotocol.identity.did.model.DidKey;
 import org.factomprotocol.identity.did.model.FactomDidContent;
 import org.factomprotocol.identity.did.model.IdentityEntry;
-import org.factomprotocol.identity.did.model.IdentityResponse;
 import org.factomprotocol.identity.did.model.KeyPurpose;
 import org.factomprotocol.identity.did.model.Metadata;
 
@@ -34,6 +33,30 @@ import java.util.Optional;
 
 public class IdentityFactory {
     private static final IdAddressKeyOps ADDRESSES = new IdAddressKeyOps();
+
+    public BlockchainResponse<?> toBlockchainResponse(String identifier, List<FactomIdentityEntry<?>> entries) throws RuleException {
+        if (entries == null || entries.size() == 0) {
+            throw new RuleException("Identity for %s could not be resolved", identifier);
+        }
+        if (entries.get(0).getOperationValue().equals(OperationValue.IDENTITY_CHAIN_CREATION)) {
+            return toIdentity(identifier, entries);
+        }
+        else if (entries.get(0).getOperationValue().equals(OperationValue.DID_MANAGEMENT)) {
+            return toDidResponse(identifier, entries);
+        }
+        throw new RuleException("DID Chain for %s did not start with a valid external id.", identifier);
+    }
+
+
+    public DIDDocument toDid(String identifier, BlockchainResponse<?> blockchainResponse) throws URISyntaxException, ParserException, RuleException {
+        if(blockchainResponse.getContent() instanceof FactomDidContent){
+            return toDid(identifier, (DidResponse) blockchainResponse);
+        }
+        if(blockchainResponse.getContent() instanceof IdentityEntry){
+            return toDid(identifier, (IdentityResponse) blockchainResponse);
+        }
+        throw new DIDRuntimeException("Invalid BlockchainResponse");
+    }
 
     public IdentityResponse toIdentity(String identifier, List<FactomIdentityEntry<?>> entries) throws RuleException {
         if (entries == null || entries.size() == 0) {
@@ -67,10 +90,9 @@ public class IdentityFactory {
         if (identityEntry == null) {
             throw new RuleException("Identity chain %s did not start with an Identity Creation entry", identifier);
         }
-        IdentityResponse identityResponse = new IdentityResponse();
-        identityResponse.setIdentity(identityEntry);
-        identityResponse.setMetadata(metadata);
-        return identityResponse;
+        return new IdentityResponse()
+                .identity(identityEntry)
+                .metadata(metadata);
     }
 
     public DidResponse toDidResponse(String identifier, List<FactomIdentityEntry<?>> entries) throws RuleException {

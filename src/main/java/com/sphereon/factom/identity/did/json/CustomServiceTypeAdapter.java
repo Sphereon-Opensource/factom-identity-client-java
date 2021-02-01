@@ -24,7 +24,7 @@ public class CustomServiceTypeAdapter implements JsonSerializer<Service>, JsonDe
                 .type(serviceMap.remove("type"))
                 .serviceEndpoint(serviceMap.remove("serviceEndpoint"));
         if (serviceMap.get("priorityRequirement") != null) {
-            service.priorityRequirement(Integer.valueOf(serviceMap.remove("priorityRequirement")));
+            service.priorityRequirement(Double.valueOf(serviceMap.remove("priorityRequirement")).intValue());
         }
         for (String key : serviceMap.keySet()) {
             service.put(key, serviceMap.get(key));
