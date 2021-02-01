@@ -14,6 +14,8 @@ import com.sphereon.factom.identity.did.parse.operations.DIDV1CreationCompoundRu
 import foundation.identity.did.parser.ParserException;
 import org.blockchain_innovation.factom.client.api.EntryApi;
 import org.blockchain_innovation.factom.client.api.errors.FactomRuntimeException;
+import org.blockchain_innovation.factom.client.api.log.LogFactory;
+import org.blockchain_innovation.factom.client.api.log.Logger;
 import org.blockchain_innovation.factom.client.api.model.Address;
 import org.blockchain_innovation.factom.client.api.model.Chain;
 import org.blockchain_innovation.factom.client.api.model.Entry;
@@ -34,6 +36,7 @@ import java.util.Optional;
 public class LowLevelIdentityClient {
     private static final IdentityEntryFactory ENTRY_FACTORY = new IdentityEntryFactory();
     private static final EncodeOperations ENCODE = new EncodeOperations();
+    private static final Logger logger = LogFactory.getLogger(LowLevelIdentityClient.class);
 
     private EntryApi entryApi;
 
@@ -108,7 +111,12 @@ public class LowLevelIdentityClient {
                                 .setChainId(entryResponse.getChainId())
                                 .setExternalIds(entryResponse.getExtIds())
                                 .setContent(entryResponse.getContent()));
-                entries.add(ENTRY_FACTORY.from(entry, blockInfo, validate));
+                try {
+                    entries.add(ENTRY_FACTORY.from(entry, blockInfo, validate));
+                } catch (RuleException e) {
+                    logger.warn("Entry in chain " + chainId + " was not parsable, with RuleException.", e);
+                }
+
             }
         }
         if (entries.size() > 1) {
