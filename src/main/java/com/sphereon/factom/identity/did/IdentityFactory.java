@@ -182,6 +182,9 @@ public class IdentityFactory {
             URI keyId = new URI(key.getId());
             if (key.getPurpose().contains(KeyPurpose.AUTHENTICATION)) {
                 authentications.add(keyId.toString());
+            } else {
+                // ToDo: figure out what to do with assertionMethods (probably need a new model constant for KeyPurpose)
+                assertionMethods.add(keyId.toString());
             }
             PublicKey publicKey = PublicKey.builder()
                     .id(keyId)
@@ -190,9 +193,6 @@ public class IdentityFactory {
                     .build();
             publicKey.setJsonObjectKeyValue(DIDConstants.JSONLD_TERM_CONTROLLER, key.getController());
             publicKeys.add(publicKey);
-
-            // ToDo: figure out what to do with assertionMethods (probably need a new model constant for KeyPurpose)
-            assertionMethods.add(keyId.toString());
         }
         DIDDocument didDocument = DIDDocument.builder()
                 .context(new URI("https://www.w3.org/ns/did/v1"))
