@@ -4,7 +4,7 @@ import net.i2p.crypto.eddsa.KeyPairGenerator;
 import org.blockchain_innovation.factom.client.api.errors.FactomRuntimeException;
 import org.blockchain_innovation.factom.client.api.model.types.AddressType;
 import org.blockchain_innovation.factom.client.api.ops.Encoding;
-import org.blockchain_innovation.factom.identiy.did.IdAddressKeyOps;
+import com.sphereon.factom.identity.did.IdAddressKeyOps;
 import org.factomprotocol.identity.did.model.KeyType;
 import org.junit.jupiter.api.Test;
 

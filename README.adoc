@@ -27,18 +27,26 @@ You need at least the following dependencies in your application
 
 <!-- At least one of the following dependencies -->
 <dependency>
-    groupId>org.blockchain-innovation.factom.client</groupId>
+    <groupId>org.blockchain-innovation.factom.client</groupId>
     <artifactId>json-converter-jee</artifactId>
     <version>0.3.0</version>
     <scope>compile</scope>
 </dependency>
 <dependency>
-    groupId>org.blockchain-innovation.factom.client</groupId>
+    <groupId>org.blockchain-innovation.factom.client</groupId>
     <artifactId>json-converter-gson</artifactId>
     <version>0.3.0</version>
     <scope>compile</scope>
 </dependency>
 
+<!-- At least one of the following did model dependencies -->
+<!-- TODO: extend with non-gson dependency options -->
+<dependency>
+    <groupId>org.factomprotocol.identity</groupId>
+    <artifactId>factom-did-models-java-gson</artifactId>
+    <version>0.3.0-SNAPSHOT</version>
+    <scope>compile</scope>
+</dependency>
 <!-- Offline signing support -->
 <dependency>
     groupId>org.blockchain-innovation.factom.client</groupId>
