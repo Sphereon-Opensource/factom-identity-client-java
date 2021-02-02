@@ -46,7 +46,7 @@ public class IdentityFactory {
     }
 
 
-    public DIDDocument toDid(String identifier, BlockchainResponse<?> blockchainResponse) throws URISyntaxException, ParserException, RuleException {
+    public DIDDocument toDid(String identifier, BlockchainResponse<?> blockchainResponse) throws URISyntaxException {
         if(blockchainResponse.getContent() instanceof FactomDidContent){
             return toDid(identifier, (DidResponse) blockchainResponse);
         }
@@ -119,7 +119,7 @@ public class IdentityFactory {
                 .metadata(metadata);
     }
 
-    public DIDDocument toDid(String identifier, IdentityResponse identityResponse) throws RuleException, ParserException, URISyntaxException {
+    public DIDDocument toDid(String identifier, IdentityResponse identityResponse) throws URISyntaxException {
         String did = identifier;
         if (!identifier.startsWith("did:")) {
             did = "did:factom:" + identifier;
@@ -168,12 +168,12 @@ public class IdentityFactory {
         return didDocument;
     }
 
-    public DIDDocument toDid(String identifier, DidResponse didResponse) throws ParserException, URISyntaxException {
+    public DIDDocument toDid(String identifier, DidResponse didResponse) throws URISyntaxException {
         String did = identifier;
         if (!identifier.startsWith("did:")) {
             did = "did:factom:" + identifier;
         }
-        DIDURL didurl = DIDURL.fromString(did);
+        DIDURL didurl = DIDVersion.FACTOM_V1_JSON.getDidUrl(did);
         List<DidKey> didKeys = Optional.ofNullable(didResponse.getFactomDidContent().getDidKey()).orElse(new ArrayList<>());
         List<String> authentications = new ArrayList<>();
         List<String> assertionMethods = new ArrayList<>();
