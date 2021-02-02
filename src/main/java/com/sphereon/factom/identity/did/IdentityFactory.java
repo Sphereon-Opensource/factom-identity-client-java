@@ -13,6 +13,8 @@ import foundation.identity.did.DIDURL;
 import foundation.identity.did.PublicKey;
 import foundation.identity.did.jsonld.DIDKeywords;
 import org.blockchain_innovation.factom.client.api.errors.FactomRuntimeException;
+import org.blockchain_innovation.factom.client.api.log.LogFactory;
+import org.blockchain_innovation.factom.client.api.log.Logger;
 import org.blockchain_innovation.factom.client.api.ops.Encoding;
 import org.factomprotocol.identity.did.model.DidKey;
 import org.factomprotocol.identity.did.model.FactomDidContent;
@@ -31,6 +33,7 @@ import java.util.Optional;
 
 public class IdentityFactory {
     private static final IdAddressKeyOps ADDRESSES = new IdAddressKeyOps();
+    private static final Logger logger = LogFactory.getLogger(IdentityFactory.class);
 
     public BlockchainResponse<?> toBlockchainResponse(String identifier, List<FactomIdentityEntry<?>> entries) throws RuleException {
         if (entries == null || entries.size() == 0) {
@@ -38,8 +41,7 @@ public class IdentityFactory {
         }
         if (entries.get(0).getOperationValue().equals(OperationValue.IDENTITY_CHAIN_CREATION)) {
             return toIdentity(identifier, entries);
-        }
-        else if (entries.get(0).getOperationValue().equals(OperationValue.DID_MANAGEMENT)) {
+        } else if (entries.get(0).getOperationValue().equals(OperationValue.DID_MANAGEMENT)) {
             return toDidResponse(identifier, entries);
         }
         throw new RuleException("DID Chain for %s did not start with a valid external id.", identifier);
@@ -47,10 +49,10 @@ public class IdentityFactory {
 
 
     public DIDDocument toDid(String identifier, BlockchainResponse<?> blockchainResponse) throws URISyntaxException {
-        if(blockchainResponse.getContent() instanceof FactomDidContent){
+        if (blockchainResponse.getContent() instanceof FactomDidContent) {
             return toDid(identifier, (DidResponse) blockchainResponse);
         }
-        if(blockchainResponse.getContent() instanceof IdentityEntry){
+        if (blockchainResponse.getContent() instanceof IdentityEntry) {
             return toDid(identifier, (IdentityResponse) blockchainResponse);
         }
         throw new DIDRuntimeException("Invalid BlockchainResponse");
@@ -82,7 +84,8 @@ public class IdentityFactory {
                 List<String> newKeys = ADDRESSES.createNewKeyReplacementList(identityEntry.getKeys(), replaceKeyEntry.getOldKey(), replaceKeyEntry.getNewKey(), replaceKeyEntry.getSignerKey());
                 identityEntry.setKeys(newKeys);
                 metadata.update(replaceKeyEntry.getBlockInfo().get());
-            } catch (FactomRuntimeException ignored) {
+            } catch (FactomRuntimeException e) {
+                logger.warn("Identity chain replacement entry could not be processed for chain: " + replaceKeyEntry.getChainId(), e);
             }
         }
         if (identityEntry == null) {
