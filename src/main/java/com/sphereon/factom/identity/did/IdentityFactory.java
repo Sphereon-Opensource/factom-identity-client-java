@@ -161,7 +161,7 @@ public class IdentityFactory {
 
         // We build using the LdObjects ourselves as the convenience method does not do everything and objects are not mutable anymore
         DIDDocument didDocument = DIDDocument.builder()
-                .context(new URI("https://www.w3.org/ns/did/v1"))
+                .context(new URI(DIDConstants.JSONLD_DID_DOCUMENT_CONTEXT))
                 .id(new URI(didurl.getDid().getDidString()))
                 .build();
         didDocument.setJsonObjectKeyValue(DIDKeywords.JSONLD_TERM_AUTHENTICATION, authentications);
@@ -198,7 +198,7 @@ public class IdentityFactory {
             publicKeys.add(publicKey);
         }
         DIDDocument didDocument = DIDDocument.builder()
-                .context(new URI("https://www.w3.org/ns/did/v1"))
+                .context(new URI(DIDConstants.JSONLD_DID_DOCUMENT_CONTEXT))
                 .id(new URI(didurl.getDid().getDidString()))
                 .publicKeys(publicKeys)
                 .build();
