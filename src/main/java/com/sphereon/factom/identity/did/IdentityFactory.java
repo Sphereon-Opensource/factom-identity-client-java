@@ -1,6 +1,5 @@
 package com.sphereon.factom.identity.did;
 
-import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.sphereon.factom.identity.did.entry.CreateFactomDIDEntry;
 import com.sphereon.factom.identity.did.entry.CreateIdentityContentEntry;
 import com.sphereon.factom.identity.did.entry.FactomIdentityEntry;
@@ -13,7 +12,6 @@ import foundation.identity.did.DIDDocument;
 import foundation.identity.did.DIDURL;
 import foundation.identity.did.PublicKey;
 import foundation.identity.did.jsonld.DIDKeywords;
-import foundation.identity.did.parser.ParserException;
 import org.blockchain_innovation.factom.client.api.errors.FactomRuntimeException;
 import org.blockchain_innovation.factom.client.api.ops.Encoding;
 import org.factomprotocol.identity.did.model.DidKey;
@@ -126,7 +124,7 @@ public class IdentityFactory {
         if (!identifier.startsWith("did:")) {
             did = "did:factom:" + identifier;
         }
-        DIDURL didurl = DIDURL.fromString(did);
+        DIDURL didurl = DIDVersion.FACTOM_IDENTITY_CHAIN.getDidUrl(did);
         List<Map<String, Object>> publicKeys = new LinkedList<>();
         List<String> authentications = new ArrayList<>();
         List<String> assertionMethods = new ArrayList<>();

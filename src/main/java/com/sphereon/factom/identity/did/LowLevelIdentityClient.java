@@ -1,17 +1,21 @@
 package com.sphereon.factom.identity.did;
 
-import com.sphereon.factom.identity.did.entry.DeactivateFactomDIDEntry;
 import com.sphereon.factom.identity.did.entry.CreateFactomDIDEntry;
 import com.sphereon.factom.identity.did.entry.CreateIdentityContentEntry;
 import com.sphereon.factom.identity.did.entry.CreateIdentityRequestEntry;
+import com.sphereon.factom.identity.did.entry.DeactivateFactomDIDEntry;
 import com.sphereon.factom.identity.did.entry.EntryValidation;
 import com.sphereon.factom.identity.did.entry.FactomIdentityEntry;
 import com.sphereon.factom.identity.did.entry.IdentityEntryFactory;
 import com.sphereon.factom.identity.did.entry.ReplaceKeyIdentityChainEntry;
 import com.sphereon.factom.identity.did.entry.UpdateFactomDIDEntry;
+import com.sphereon.factom.identity.did.parse.RuleException;
+import com.sphereon.factom.identity.did.parse.operations.DIDV1CreationCompoundRule;
 import foundation.identity.did.parser.ParserException;
 import org.blockchain_innovation.factom.client.api.EntryApi;
 import org.blockchain_innovation.factom.client.api.errors.FactomRuntimeException;
+import org.blockchain_innovation.factom.client.api.log.LogFactory;
+import org.blockchain_innovation.factom.client.api.log.Logger;
 import org.blockchain_innovation.factom.client.api.model.Address;
 import org.blockchain_innovation.factom.client.api.model.Chain;
 import org.blockchain_innovation.factom.client.api.model.Entry;
@@ -20,17 +24,19 @@ import org.blockchain_innovation.factom.client.api.model.response.CommitAndRevea
 import org.blockchain_innovation.factom.client.api.model.response.factomd.EntryBlockResponse;
 import org.blockchain_innovation.factom.client.api.model.response.factomd.EntryResponse;
 import org.blockchain_innovation.factom.client.api.ops.EncodeOperations;
-import com.sphereon.factom.identity.did.entry.*;
-import com.sphereon.factom.identity.did.parse.RuleException;
-import com.sphereon.factom.identity.did.parse.operations.DIDV1CreationCompoundRule;
 import org.factomprotocol.identity.did.model.BlockInfo;
 import org.factomprotocol.identity.did.model.FactomDidContent;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
 
 public class LowLevelIdentityClient {
     private static final IdentityEntryFactory ENTRY_FACTORY = new IdentityEntryFactory();
     private static final EncodeOperations ENCODE = new EncodeOperations();
+    private static final Logger logger = LogFactory.getLogger(LowLevelIdentityClient.class);
 
     private EntryApi entryApi;
 
@@ -105,7 +111,12 @@ public class LowLevelIdentityClient {
                                 .setChainId(entryResponse.getChainId())
                                 .setExternalIds(entryResponse.getExtIds())
                                 .setContent(entryResponse.getContent()));
-                entries.add(ENTRY_FACTORY.from(entry, blockInfo, validate));
+                try {
+                    entries.add(ENTRY_FACTORY.from(entry, blockInfo, validate));
+                } catch (RuleException e) {
+                    logger.warn("Entry in chain " + chainId + " was not parsable, with RuleException.", e);
+                }
+
             }
         }
         if (entries.size() > 1) {
@@ -225,7 +236,7 @@ public class LowLevelIdentityClient {
         return getEntryApi().commitAndRevealEntry(deactivateEntry.toEntry(Optional.empty()), ecAddress).join();
     }
 
-    private String getChainIdFrom(String identifier) throws ParserException {
+    private String getChainIdFrom(String identifier) {
         String chainId = identifier;
         if (identifier == null) {
             throw new DIDRuntimeException.InvalidIdentifierException("Identifier must be non-null.");
