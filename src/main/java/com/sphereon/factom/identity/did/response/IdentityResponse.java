@@ -1,5 +1,6 @@
 package com.sphereon.factom.identity.did.response;
 
+import com.sphereon.factom.identity.did.DIDVersion;
 import org.factomprotocol.identity.did.model.IdentityEntry;
 import org.factomprotocol.identity.did.model.Metadata;
 
@@ -29,5 +30,10 @@ public class IdentityResponse implements BlockchainResponse<IdentityEntry> {
     @Override
     public Metadata getMetadata() {
         return metadata;
+    }
+
+    @Override
+    public DIDVersion getDidVersion(){
+        return DIDVersion.FACTOM_IDENTITY_CHAIN;
     }
 }

@@ -49,10 +49,10 @@ public class IdentityFactory {
 
 
     public DIDDocument toDid(String identifier, BlockchainResponse<?> blockchainResponse) throws URISyntaxException {
-        if (blockchainResponse.getContent() instanceof FactomDidContent) {
+        if (DIDVersion.FACTOM_V1_JSON.equals(blockchainResponse.getDidVersion())) {
             return toDid(identifier, (DidResponse) blockchainResponse);
         }
-        if (blockchainResponse.getContent() instanceof IdentityEntry) {
+        if (DIDVersion.FACTOM_IDENTITY_CHAIN.equals(blockchainResponse.getDidVersion())) {
             return toDid(identifier, (IdentityResponse) blockchainResponse);
         }
         throw new DIDRuntimeException("Invalid BlockchainResponse");
