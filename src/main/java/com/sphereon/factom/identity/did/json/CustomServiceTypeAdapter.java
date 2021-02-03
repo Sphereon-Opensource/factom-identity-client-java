@@ -24,6 +24,7 @@ public class CustomServiceTypeAdapter implements JsonSerializer<Service>, JsonDe
                 .type(serviceMap.remove("type"))
                 .serviceEndpoint(serviceMap.remove("serviceEndpoint"));
         if (serviceMap.get("priorityRequirement") != null) {
+            // priority requirement is cast from a double because GSON serializes all numbers as doubles (eg. 1 -> "1.0")
             service.priorityRequirement(Double.valueOf(serviceMap.remove("priorityRequirement")).intValue());
         }
         for (String key : serviceMap.keySet()) {
