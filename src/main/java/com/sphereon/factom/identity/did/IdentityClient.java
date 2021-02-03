@@ -1,6 +1,11 @@
 package com.sphereon.factom.identity.did;
 
+import com.sphereon.factom.identity.did.entry.CreateFactomDIDEntry;
+import com.sphereon.factom.identity.did.entry.CreateIdentityRequestEntry;
+import com.sphereon.factom.identity.did.entry.EntryValidation;
+import com.sphereon.factom.identity.did.entry.FactomIdentityEntry;
 import com.sphereon.factom.identity.did.entry.ResolvedFactomDIDEntry;
+import com.sphereon.factom.identity.did.parse.RuleException;
 import com.sphereon.factom.identity.did.request.CreateFactomDidRequest;
 import foundation.identity.did.DIDDocument;
 import foundation.identity.did.parser.ParserException;
@@ -10,14 +15,8 @@ import org.blockchain_innovation.factom.client.api.model.Address;
 import org.blockchain_innovation.factom.client.api.model.response.CommitAndRevealChainResponse;
 import org.blockchain_innovation.factom.client.impl.EntryApiImpl;
 import org.blockchain_innovation.factom.client.impl.Networks;
-import com.sphereon.factom.identity.did.entry.CreateFactomDIDEntry;
-import com.sphereon.factom.identity.did.entry.CreateIdentityRequestEntry;
-import com.sphereon.factom.identity.did.entry.EntryValidation;
-import com.sphereon.factom.identity.did.entry.FactomIdentityEntry;
-import com.sphereon.factom.identity.did.parse.RuleException;
 import org.factomprotocol.identity.did.model.FactomDidContent;
 import org.factomprotocol.identity.did.model.IdentityEntry;
-import org.factomprotocol.identity.did.model.IdentityResponse;
 
 import java.io.File;
 import java.net.URISyntaxException;
@@ -46,13 +45,9 @@ public class IdentityClient {
     }
 
     public DIDDocument getDidDocument(String identifier, EntryValidation entryValidation, Optional<Long> blockHeight, Optional<Long> timestamp) throws RuleException, ParserException, URISyntaxException {
-        return FACTORY.toDid(identifier, getIdentityResponse(identifier, entryValidation, blockHeight, timestamp));
-    }
-
-
-    public IdentityResponse getIdentityResponse(String identifier, EntryValidation entryValidation, Optional<Long> blockHeight, Optional<Long> timestamp) throws RuleException, ParserException {
-        List<FactomIdentityEntry<?>> allEntries = lowLevelClient().getAllEntriesByIdentifier(identifier, entryValidation, blockHeight, timestamp);
-        return FACTORY.toIdentity(identifier, allEntries);
+        List<FactomIdentityEntry<?>> allEntries = lowLevelClient()
+                .getAllEntriesByIdentifier(identifier, entryValidation, blockHeight, timestamp);
+        return FACTORY.toDid(identifier, FACTORY.toBlockchainResponse(identifier, allEntries));
     }
 
     public IdentityEntry create(CreateIdentityRequestEntry createRequest, Optional<Address> ecAddress) {
