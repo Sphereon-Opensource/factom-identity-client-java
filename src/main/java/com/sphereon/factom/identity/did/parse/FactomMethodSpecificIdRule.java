@@ -20,12 +20,7 @@ public class FactomMethodSpecificIdRule extends AbstractGenericRule<String> {
         if (StringUtils.isEmpty(getDidUrl())) {
             throw new RuleException("A Factom DID cannot have an empty DID scheme");
         }
-        String methodSpecificId;
-        try {
-            methodSpecificId = DIDVersion.FACTOM_V1_JSON.getMethodSpecificId(getDidUrl());
-        } catch (ParserException e){
-            throw new RuleException(e);
-        }
+        String methodSpecificId = DIDVersion.FACTOM_V1_JSON.getMethodSpecificId(getDidUrl());
         if (StringUtils.isEmpty(methodSpecificId)) {
             throw new RuleException("Invalid Factom DID specified: %s", getDidUrl());
         }
