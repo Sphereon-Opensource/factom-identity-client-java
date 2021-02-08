@@ -1,4 +1,5 @@
 import com.google.gson.stream.JsonReader;
+import com.sphereon.factom.identity.did.response.IdentityResponse;
 import foundation.identity.did.DIDDocument;
 import foundation.identity.did.parser.ParserException;
 import org.blockchain_innovation.factom.client.api.model.Address;
@@ -13,7 +14,6 @@ import com.sphereon.factom.identity.did.request.CreateKeyRequest;
 import com.sphereon.factom.identity.did.request.CreateServiceRequest;
 import org.factomprotocol.identity.did.model.DidKey;
 import org.factomprotocol.identity.did.model.FactomDidContent;
-import org.factomprotocol.identity.did.model.IdentityResponse;
 import org.factomprotocol.identity.did.model.KeyPurpose;
 import org.factomprotocol.identity.did.model.KeyType;
 import org.junit.jupiter.api.BeforeEach;
