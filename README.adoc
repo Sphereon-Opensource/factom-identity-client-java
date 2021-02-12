@@ -13,13 +13,13 @@ You need at least the following dependencies in your application
 ....
 
 <dependency>
-    groupId>org.blockchain-innovation.factom.client</groupId>
+    <groupId>org.blockchain-innovation.factom.client</groupId>
     <artifactId>factom-client-impl</artifactId>
     <version>0.3.0</version>
     <scope>compile</scope>
 </dependency>
 <dependency>
-    groupId>org.blockchain-innovation.factom.client</groupId>
+    <groupId>org.blockchain-innovation.factom.client</groupId>
     <artifactId>logger-slf4j</artifactId>
     <version>0.3.0</version>
     <scope>compile</scope>
@@ -49,7 +49,7 @@ You need at least the following dependencies in your application
 </dependency>
 <!-- Offline signing support -->
 <dependency>
-    groupId>org.blockchain-innovation.factom.client</groupId>
+    <groupId>org.blockchain-innovation.factom.client</groupId>
     <artifactId>factom-client-offline-signing</artifactId>
     <version>0.3.0</version>
     <scope>compile</scope>
