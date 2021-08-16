@@ -104,7 +104,7 @@ public class IdAddresKeysTest extends AbstractIdentityTest {
     public void testUnsupportedKeyType() {
         assertThrows(
                 FactomRuntimeException.AssertionException.class,
-                () -> new IdAddressKeyOps().toIdPubAddress(KeyType.ECDSASECP256K1VERIFICATIONKEY, IDPUB_ALL_ONES, Encoding.BASE58)
+                () -> new IdAddressKeyOps().toIdPubAddress(KeyType.ECDSASECP256K1VERIFICATIONKEY2019, IDPUB_ALL_ONES, Encoding.BASE58)
         );
     }
 

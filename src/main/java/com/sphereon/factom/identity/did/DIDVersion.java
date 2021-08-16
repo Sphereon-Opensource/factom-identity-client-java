@@ -24,8 +24,7 @@ public enum DIDVersion {
     }
 
     public void assertFactomMethod(String didUrl) {
-        String didUrlMethod;
-        didUrlMethod = getDid(didUrl).getMethod();
+        final String didUrlMethod = getDid(didUrl).getMethodName();
         if (!method.equals(didUrlMethod)) {
             throw new DIDRuntimeException("Method of DID URL is not supported by this version of Factom DIDs: " + didUrl);
         }

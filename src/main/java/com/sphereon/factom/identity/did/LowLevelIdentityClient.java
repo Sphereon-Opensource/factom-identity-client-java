@@ -33,6 +33,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
+import static com.sphereon.factom.identity.did.Constants.DID.DID_FACTOM;
+
 public class LowLevelIdentityClient {
     private static final IdentityEntryFactory ENTRY_FACTORY = new IdentityEntryFactory();
     private static final EncodeOperations ENCODE = new EncodeOperations();
@@ -240,7 +242,7 @@ public class LowLevelIdentityClient {
         String chainId = identifier;
         if (identifier == null) {
             throw new DIDRuntimeException.InvalidIdentifierException("Identifier must be non-null.");
-        } else if (identifier.startsWith("did:factom:")) {
+        } else if (identifier.startsWith(DID_FACTOM)) {
             String methodSpecificId = DIDVersion.FACTOM_V1_JSON.getMethodSpecificId(identifier);
             List<String> parts = Arrays.asList(methodSpecificId.split(":"));
             Collections.reverse(parts);

@@ -3,31 +3,31 @@
   "managementKey": [
     {
       "id": "did:factom:6aa7d4afe4932885b5b6e93accb5f4f6c14bd1827733e05e3324ae392c0b2764#management-0",
-      "type": "Ed25519VerificationKey",
+      "type": "Ed25519VerificationKey2020",
       "controller": "did:factom:6aa7d4afe4932885b5b6e93accb5f4f6c14bd1827733e05e3324ae392c0b2764",
-      "publicKeyBase58": "H3C2AVvLMv6gmMNam3uVAjZpfkcJCwDwnZn6z3wXmqPV",
+      "publicKeyBase58": "zH3C2AVvLMv6gmMNam3uVAjZpfkcJCwDwnZn6z3wXmqPV",
       "priority": 0
     }
   ],
   "didKey": [
     {
       "id": "did:factom:6aa7d4afe4932885b5b6e93accb5f4f6c14bd1827733e05e3324ae392c0b2764#public-0",
-      "type": "Ed25519VerificationKey",
+      "type": "Ed25519VerificationKey2020",
       "controller": "did:factom:6aa7d4afe4932885b5b6e93accb5f4f6c14bd1827733e05e3324ae392c0b2764",
-      "publicKeyBase58": "3uVAjZpfMv6gmMNam3uVAjZpfkcJCwDwnZn6MNam3uVA",
+      "publicKeyMultibase": "z3uVAjZpfMv6gmMNam3uVAjZpfkcJCwDwnZn6MNam3uVA",
       "purpose": [
-        "publicKey",
+        "verificationMethod",
         "authentication"
       ],
       "priorityRequirement": 1
     },
     {
       "id": "did:factom:6aa7d4afe4932885b5b6e93accb5f4f6c14bd1827733e05e3324ae392c0b2764#authentication-0",
-      "type": "ECDSASecp256k1VerificationKey",
+      "type": "EcdsaSecp256k1VerificationKey2019",
       "controller": "did:factom:6aa7d4afe4932885b5b6e93accb5f4f6c14bd1827733e05e3324ae392c0b2764",
       "publicKeyBase58": "H3C2AVvLMv6gmMNam3uVAjZpfkcJCwDwnZn6z3wXmqPV",
       "purpose": [
-        "authentication"
+        "assertionMethod"
       ],
       "priorityRequirement": 2,
       "bip44": "m / 44' / 0' / 0' / 0 / 0"

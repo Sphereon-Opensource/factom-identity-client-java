@@ -5,7 +5,7 @@ plugins {
 }
 
 group 'com.sphereon.public'
-version '0.3.0-SNAPSHOT'
+version '0.4.0-SNAPSHOT'
 
 ext {
     // the password needs to be specified via command line
@@ -21,6 +21,12 @@ repositories {
     mavenCentral()
     maven {
         url "https://nexus.qa.sphereon.com/repository/sphereon-opensource-releases"
+    }
+    maven {
+        url "https://repo.danubetech.com/repository/maven-public/"
+    }
+    maven {
+        url "https://jitpack.io"
     }
 }
 configurations.all {
@@ -44,6 +50,12 @@ allprojects {
         }
         maven {
             url "https://nexus.qa.sphereon.com/repository/sphereon-opensource-snapshots"
+        }
+        maven {
+            url "https://repo.danubetech.com/repository/maven-public/"
+        }
+        maven {
+            url "https://jitpack.io"
         }
 
     }
@@ -97,15 +109,17 @@ publishing {
 
 
 dependencies {
-    compile 'org.blockchain-innovation.factom.client:factom-client-api:0.3.0-SNAPSHOT'
-    compile 'org.blockchain-innovation.factom.client:factom-client-impl:0.3.0-SNAPSHOT'
-    compile 'org.blockchain-innovation.factom.client:factom-client-offline-signing:0.3.0-SNAPSHOT'
-    compile group: 'decentralized-identity', name: 'did-common-java', version: '0.3-SNAPSHOT'
+    compile 'org.blockchain-innovation.factom.client:factom-client-api:0.4.0'
+    compile 'org.blockchain-innovation.factom.client:factom-client-impl:0.4.0'
+    compile 'org.blockchain-innovation.factom.client:factom-client-offline-signing:0.4.0'
+    compile group: 'org.factomprotocol.identity', name: 'factom-did-models-java-gson', version: '0.3.0'
+    compile group: 'decentralized-identity', name: 'did-common-java', version: '0.3.0'
+    compile group: 'com.github.multiformats', name: 'java-multibase', version: 'v1.0.0'
     compile "javax.json.bind:javax.json.bind-api:1.0.0-RC2"
     compile 'net.i2p.crypto:eddsa:0.3.0'
-    compile group: 'org.factomprotocol.identity', name: 'factom-did-models-java-gson', version: '0.3.0-SNAPSHOT'
-    testCompile 'org.blockchain-innovation.factom.client:logger-slf4j:0.3.0-SNAPSHOT'
-    testCompile 'org.blockchain-innovation.factom.client:json-converter-gson:0.3.0-SNAPSHOT'
+
+    testCompile 'org.blockchain-innovation.factom.client:logger-slf4j:0.4.0'
+    testCompile 'org.blockchain-innovation.factom.client:json-converter-gson:0.4.0'
     testImplementation("org.junit.jupiter:junit-jupiter-api:5.6.1")
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.6.1")
 }

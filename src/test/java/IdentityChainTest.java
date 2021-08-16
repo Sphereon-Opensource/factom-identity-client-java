@@ -3,6 +3,7 @@ import com.sphereon.factom.identity.did.entry.CreateIdentityRequestEntry;
 import com.sphereon.factom.identity.did.entry.EntryValidation;
 import com.sphereon.factom.identity.did.entry.FactomIdentityEntry;
 import com.sphereon.factom.identity.did.entry.ReplaceKeyIdentityChainEntry;
+import com.sphereon.factom.identity.did.response.IdentityResponse;
 import foundation.identity.did.parser.ParserException;
 import org.blockchain_innovation.factom.client.api.model.Address;
 import org.blockchain_innovation.factom.client.api.model.response.CommitAndRevealChainResponse;
@@ -12,7 +13,10 @@ import com.sphereon.factom.identity.did.DIDVersion;
 import com.sphereon.factom.identity.did.IdentityFactory;
 import com.sphereon.factom.identity.did.OperationValue;
 import com.sphereon.factom.identity.did.parse.RuleException;
-import org.factomprotocol.identity.did.model.*;
+import org.factomprotocol.identity.did.model.CreateIdentityRequest;
+import org.factomprotocol.identity.did.model.FactomKey;
+import org.factomprotocol.identity.did.model.IdentityEntry;
+import org.factomprotocol.identity.did.model.KeyType;
 import org.junit.jupiter.api.Test;
 
 import java.security.KeyPair;
@@ -108,9 +112,9 @@ public class IdentityChainTest extends AbstractIdentityTest {
         CreateIdentityContentEntry identityContentEntry =
                 new CreateIdentityContentEntry(
                         identityEntry,
-                        "Off-Blocks",
+                        "Java-client",
                         "Identity",
-                        "3d5fa912acb2231ad3abc2a97b62dfcea7828b156bcc56736ea8535d0d628dd1");
+                        UUID.randomUUID().toString());
         lowLevelIdentityClient.create(identityContentEntry, new Address(EC_SECRET_ADDRESS));
     }
 

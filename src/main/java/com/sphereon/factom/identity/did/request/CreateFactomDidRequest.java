@@ -2,6 +2,7 @@ package com.sphereon.factom.identity.did.request;
 
 import com.sphereon.factom.identity.did.DIDVersion;
 import com.sphereon.factom.identity.did.entry.CreateFactomDIDEntry;
+import foundation.identity.did.DID;
 import org.blockchain_innovation.factom.client.impl.Networks;
 import org.factomprotocol.identity.did.model.DidMethodVersion;
 import org.factomprotocol.identity.did.model.FactomDidContent;
@@ -11,6 +12,8 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
+
+import static com.sphereon.factom.identity.did.Constants.DID.DID_FACTOM;
 
 public class CreateFactomDidRequest {
     private final DIDVersion didVersion;
@@ -58,9 +61,9 @@ public class CreateFactomDidRequest {
 
     private String getDidURL(String chainId) {
         if (networkName == null || Networks.MAINNET.equalsIgnoreCase(networkName)) {
-            return "did:factom:" + chainId;
+            return DID_FACTOM + chainId;
         }
-        return "did:factom:" + networkName + ':' + chainId;
+        return DID_FACTOM + networkName + ':' + chainId;
     }
 
     public static final class Builder {
@@ -88,7 +91,7 @@ public class CreateFactomDidRequest {
         public Builder managementKey(CreateKeyRequest managementKey) {
             if (this.managementKeys == null) {
                 this.managementKeys = new ArrayList<>(Arrays.asList(managementKey));
-            } else {
+            } else if (!managementKeys.contains(managementKey)){
                 this.managementKeys.add(managementKey);
             }
             return this;
@@ -102,7 +105,7 @@ public class CreateFactomDidRequest {
         public Builder didKey(CreateKeyRequest didKey) {
             if (this.didKeys == null) {
                 this.didKeys = new ArrayList<>(Arrays.asList(didKey));
-            } else {
+            } else if (!didKeys.contains(didKey)) {
                 this.didKeys.add(didKey);
             }
             return this;
@@ -116,7 +119,7 @@ public class CreateFactomDidRequest {
         public Builder service(CreateServiceRequest service) {
             if (this.services == null) {
                 this.services = new ArrayList<>(Arrays.asList(service));
-            } else {
+            } else if (!services.contains(service)) {
                 this.services.add(service);
             }
             return this;

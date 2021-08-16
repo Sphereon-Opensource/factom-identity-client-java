@@ -17,7 +17,6 @@ import org.factomprotocol.identity.did.model.FactomDidContent;
 import org.factomprotocol.identity.did.model.KeyPurpose;
 import org.factomprotocol.identity.did.model.KeyType;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.io.File;
@@ -33,10 +32,13 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 public class DIDTest extends AbstractIdentityTest {
     public static final String TEST_IDENTITY_CHAINID = "6aa7d4afe4932885b5b6e93accb5f4f6c14bd1827733e05e3324ae392c0b2764";
+    public static final String ES_ADDRESS = "Es3Y6U6H1Pfg4wYag8VMtRZEGuEJnfkJ2ZuSyCVcQKweB6y4WvGH";
+    public static final String DID_FACTOM = "did:factom:";
     private FactomDidContent factomDidContent;
 
     @BeforeEach
@@ -51,16 +53,15 @@ public class DIDTest extends AbstractIdentityTest {
 
     @Test
     public void test() throws RuleException, ParserException {
-        String ES_ADDRESS = "Es4JHJ7T2E34j2Xqg84jWZRvgJ1cBtZZMseL2GxaEwJ7PigV23dh";
         String nonce = "test-" + System.currentTimeMillis();
         String chainId = new CreateFactomDIDEntry(DIDVersion.FACTOM_V1_JSON, null, nonce).getChainId();
         assertNotNull(chainId);
 
         CreateFactomDIDEntry createEntry = new CreateFactomDIDEntry(DIDVersion.FACTOM_V1_JSON, factomDidContent, nonce);
 
-        String didURL = "did:factom:" + chainId;
+        String didURL = DID_FACTOM + chainId;
         String targetId = DIDVersion.FACTOM_V1_JSON.getMethodSpecificId(didURL);
-        String keyId = "did:factom:" + chainId + "#keys-1";
+        String keyId = DID_FACTOM + chainId + "#keys-1";
 //        DIDDocument didDocument = DIDDocument.build(didReference, null, null, null);
 
         FactomDidContent commitAndRevealChainResponse = lowLevelIdentityClient.create(createEntry, new Address(ES_ADDRESS));
@@ -68,8 +69,11 @@ public class DIDTest extends AbstractIdentityTest {
         System.err.println(commitAndRevealChainResponse);
         List<FactomIdentityEntry<?>> identityEntries = lowLevelIdentityClient.getAllEntriesByIdentifier(didURL, EntryValidation.THROW_ERROR);
         assertNotNull(identityEntries);
-        FactomIdentityEntry<?> identityEntry = identityEntries.get(0);
-        assertNotNull(identityEntry);
+
+        // We cannot get the entries yet, as this has created a new chain, which has not been anchored
+
+//        FactomIdentityEntry<?> identityEntry = identityEntries.get(0);
+//        assertNotNull(identityEntry);
         // todo This is not a proper update for now
         // CommitAndRevealEntryResponse updateEntryResponse = lowLevelDidClient.update(didDocument, nonce, keyId, new Address(EC_SECRET_ADDRESS));
         //todo This is not a proper deactivate for now
@@ -77,7 +81,7 @@ public class DIDTest extends AbstractIdentityTest {
     }
 
     @Test
-    @Disabled
+//    @Disabled
     public void createFactomDID() throws MalformedURLException {
         CreateKeyRequest managementKey = new CreateKeyRequest.Builder()
                 .type(KeyType.ED25519VERIFICATIONKEY)
@@ -85,12 +89,19 @@ public class DIDTest extends AbstractIdentityTest {
                 .publicKeyBase58("H3C2AVvLMv6gmMNam3uVAjZpfkcJCwDwnZn6z3wXmqPV")
                 .priority(0)
                 .build();
-        CreateKeyRequest didKey = new CreateKeyRequest.Builder()
+        CreateKeyRequest didKey0 = new CreateKeyRequest.Builder()
                 .type(KeyType.ED25519VERIFICATIONKEY)
                 .keyIdentifier("public-0")
                 .publicKeyBase58("3uVAjZpfMv6gmMNam3uVAjZpfkcJCwDwnZn6MNam3uVA")
                 .priorityRequirement(1)
-                .purpose(Arrays.asList(KeyPurpose.AUTHENTICATION, KeyPurpose.PUBLICKEY))
+                .purposes(Arrays.asList(KeyPurpose.AUTHENTICATION, KeyPurpose.VERIFICATIONMETHOD))
+                .build();
+        CreateKeyRequest didKey1 = new CreateKeyRequest.Builder()
+                .type(KeyType.ED25519VERIFICATIONKEY)
+                .keyIdentifier("public-1")
+                .publicKeyMultibase("z3uVAjZpfMv6gmMNam3uVAjZpfkcJCwDwnZn6MNam3uVA")
+                .priorityRequirement(1)
+                .purposes(Arrays.asList(KeyPurpose.ASSERTIONMETHOD, KeyPurpose.VERIFICATIONMETHOD))
                 .build();
         CreateServiceRequest service = new CreateServiceRequest.Builder()
                 .serviceIdentifier("cr-0")
@@ -101,26 +112,30 @@ public class DIDTest extends AbstractIdentityTest {
         CreateFactomDidRequest createRequest = new CreateFactomDidRequest.Builder()
                 .didVersion(DIDVersion.FACTOM_V1_JSON)
                 .managementKeys(Collections.singletonList(managementKey))
-                .didKeys(Collections.singletonList(didKey))
+                .didKeys(Arrays.asList(didKey0, didKey1))
                 .services(Collections.singletonList(service))
                 .networkName("testnet")
                 .nonce("test-" + System.currentTimeMillis())
                 .tag("test")
                 .tag("did")
                 .build();
-        ResolvedFactomDIDEntry<FactomDidContent> content = identityClient.create(createRequest, new Address("Es4JHJ7T2E34j2Xqg84jWZRvgJ1cBtZZMseL2GxaEwJ7PigV23dh"));
+        ResolvedFactomDIDEntry<FactomDidContent> content = identityClient.create(createRequest, new Address(ES_ADDRESS));
         DidKey didKeyResult = content.getContent().getDidKey().get(0);
         assertNotNull(didKeyResult);
+
+        final DIDDocument didDocument = identityClient.factory().toDid(content.getChainId(), content.getContent());
+        assertNotNull(didDocument);
+        assertEquals(1, didDocument.getServices().size());
     }
 
     @Test
     public void getDidDocumentFromIdentityChain() throws RuleException, ParserException, URISyntaxException {
 
-        List<FactomIdentityEntry<?>> allEntries = lowLevelIdentityClient.getAllEntriesByIdentifier("did:factom:" + TEST_IDENTITY_CHAINID, EntryValidation.THROW_ERROR);
+        List<FactomIdentityEntry<?>> allEntries = lowLevelIdentityClient.getAllEntriesByIdentifier(DID_FACTOM + TEST_IDENTITY_CHAINID, EntryValidation.THROW_ERROR);
         assertNotNull(allEntries);
 
-        IdentityResponse identityResponse = IDENTITY_FACTORY.toIdentity("did:factom:" + TEST_IDENTITY_CHAINID, allEntries);
-        DIDDocument didDocument = IDENTITY_FACTORY.toDid("did:factom:" + TEST_IDENTITY_CHAINID, identityResponse);
+        IdentityResponse identityResponse = IDENTITY_FACTORY.toIdentity(DID_FACTOM + TEST_IDENTITY_CHAINID, allEntries);
+        DIDDocument didDocument = IDENTITY_FACTORY.toDid(DID_FACTOM + TEST_IDENTITY_CHAINID, identityResponse);
         assertNotNull(didDocument);
         System.err.println(didDocument.toString());
     }

@@ -4,14 +4,15 @@ import com.sphereon.factom.identity.did.entry.CreateFactomDIDEntry;
 import com.sphereon.factom.identity.did.entry.CreateIdentityContentEntry;
 import com.sphereon.factom.identity.did.entry.FactomIdentityEntry;
 import com.sphereon.factom.identity.did.entry.ReplaceKeyIdentityChainEntry;
+import com.sphereon.factom.identity.did.mapper.JwkMapper;
 import com.sphereon.factom.identity.did.parse.RuleException;
 import com.sphereon.factom.identity.did.response.BlockchainResponse;
 import com.sphereon.factom.identity.did.response.DidResponse;
 import com.sphereon.factom.identity.did.response.IdentityResponse;
 import foundation.identity.did.DIDDocument;
 import foundation.identity.did.DIDURL;
-import foundation.identity.did.PublicKey;
-import foundation.identity.did.jsonld.DIDKeywords;
+import foundation.identity.did.VerificationMethod;
+import io.ipfs.multibase.Multibase;
 import org.blockchain_innovation.factom.client.api.errors.FactomRuntimeException;
 import org.blockchain_innovation.factom.client.api.log.LogFactory;
 import org.blockchain_innovation.factom.client.api.log.Logger;
@@ -20,16 +21,18 @@ import org.factomprotocol.identity.did.model.DidKey;
 import org.factomprotocol.identity.did.model.FactomDidContent;
 import org.factomprotocol.identity.did.model.IdentityEntry;
 import org.factomprotocol.identity.did.model.KeyPurpose;
+import org.factomprotocol.identity.did.model.KeyType;
 import org.factomprotocol.identity.did.model.Metadata;
+import org.factomprotocol.identity.did.model.Service;
+
 
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
+
+import static com.sphereon.factom.identity.did.Constants.DID.DID_FACTOM;
 
 public class IdentityFactory {
     private static final IdAddressKeyOps ADDRESSES = new IdAddressKeyOps();
@@ -48,7 +51,7 @@ public class IdentityFactory {
     }
 
 
-    public DIDDocument toDid(String identifier, BlockchainResponse<?> blockchainResponse) throws URISyntaxException {
+    public DIDDocument toDid(String identifier, BlockchainResponse<?> blockchainResponse) {
         if (DIDVersion.FACTOM_V1_JSON.equals(blockchainResponse.getDidVersion())) {
             return toDid(identifier, (DidResponse) blockchainResponse);
         }
@@ -122,87 +125,164 @@ public class IdentityFactory {
                 .metadata(metadata);
     }
 
-    public DIDDocument toDid(String identifier, IdentityResponse identityResponse) throws URISyntaxException {
-        String did = identifier;
-        if (!identifier.startsWith("did:")) {
-            did = "did:factom:" + identifier;
-        }
-        DIDURL didurl = DIDVersion.FACTOM_IDENTITY_CHAIN.getDidUrl(did);
-        List<Map<String, Object>> publicKeys = new LinkedList<>();
-        List<String> authentications = new ArrayList<>();
-        List<String> assertionMethods = new ArrayList<>();
-        List<String> idPubs = identityResponse.getIdentity().getKeys();
+    public DIDDocument toDid(String identifier, IdentityResponse identityResponse) {
+        final String did = did(identifier);
+        final DIDURL didurl = DIDVersion.FACTOM_IDENTITY_CHAIN.getDidUrl(did);
+        final List<VerificationMethod> verificationMethods = new ArrayList<>();
+        final List<VerificationMethod> authentications = new ArrayList<>();
+        final List<VerificationMethod> assertionMethods = new ArrayList<>();
+        final List<VerificationMethod> capabilityInvocationMethods = new ArrayList<>();
+        final List<VerificationMethod> keyAgreementMethods = new ArrayList<>();
+        final List<String> idPubs = identityResponse.getIdentity().getKeys();
 
 
         for (int i = 0; i < idPubs.size(); i++) {
-            String idPub = idPubs.get(i);
-            String controller = didurl.getDid().getDidString();
-            String id = String.format("%s#key-%d", controller, i);
-            byte[] keyBytes = ADDRESSES.toEd25519PublicKey(idPub).getAbyte();
-            String hexKey = Encoding.HEX.encode(keyBytes);
-            String b58Key = Encoding.BASE58.encode(keyBytes);
-            Map<String, Object> keyAttrs = new HashMap<>();
-            Map<String, Object> authAttrs = new HashMap<>();
+            final String idPub = idPubs.get(i);
+            final String controller = didurl.getDid().getDidString();
+            final String id = String.format("%s#key-%d", controller, i);
+            final byte[] keyBytes = ADDRESSES.toEd25519PublicKey(idPub).getAbyte();
+            final String b58Key = Encoding.BASE58.encode(keyBytes);
+            final String mbKey = Multibase.encode(Multibase.Base.Base58BTC, keyBytes);
 
+            VerificationMethod verificationMethod = VerificationMethod.builder()
+                    .id(URI.create(id))
+                    .type("Ed25519VerificationKey2018")
+                    .publicKeyBase58(b58Key)
+                    .publicKeyMultibase(mbKey)
+                    .build();
 
-            keyAttrs.put(DIDConstants.JSONLD_TERM_TYPE, "Ed25519VerificationKey2018");
-            keyAttrs.put(DIDConstants.JSONLD_TERM_ID, id);
-            keyAttrs.put(DIDKeywords.JSONLD_TERM_PUBLICKEYBASE58, b58Key);
-            keyAttrs.put(DIDKeywords.JSONLD_TERM_PUBLICKEYHEX, hexKey);
-
-            keyAttrs.put(DIDConstants.JSONLD_TERM_CONTROLLER, controller);
-            authAttrs.put(DIDConstants.JSONLD_TERM_CONTROLLER, controller);
-            if (i > 0 || idPubs.size() == 1) {
-                authentications.add(id);
-                assertionMethods.add(id);
+            verificationMethods.add(verificationMethod);
+            if (idPubs.size() == 1 || i < idPubs.size()) {
+                capabilityInvocationMethods.add(verificationMethod);
             }
-            publicKeys.add(PublicKey.fromJsonObject(keyAttrs).getJsonObject());
+            if (i > 0 || idPubs.size() == 1) {
+                keyAgreementMethods.add(verificationMethod);
+                authentications.add(verificationMethod);
+                assertionMethods.add(verificationMethod);
+            }
+
         }
 
+//        final DIDDocument.Builder<? extends DIDDocument.Builder<?>> builder = DIDDocument.builder().id(URI.create(did));
+
         // We build using the LdObjects ourselves as the convenience method does not do everything and objects are not mutable anymore
-        DIDDocument didDocument = DIDDocument.builder()
-                .id(new URI(didurl.getDid().getDidString()))
+        final DIDDocument didDocument = DIDDocument.builder()
+                .id(constructURI(didurl.getDid().getDidString()))
+                .verificationMethods(verificationMethods)
+                .assertionMethodVerificationMethods(assertionMethods)
+                .authenticationVerificationMethods(authentications)
+                .capabilityInvocationVerificationMethods(capabilityInvocationMethods)
+                .keyAgreementVerificationMethods(keyAgreementMethods)
                 .build();
-        didDocument.setJsonObjectKeyValue(DIDKeywords.JSONLD_TERM_AUTHENTICATION, authentications);
-        didDocument.setJsonObjectKeyValue(DIDKeywords.JSONLD_TERM_PUBLICKEY, publicKeys);
-        didDocument.setJsonObjectKeyValue(DIDConstants.JSONLD_TERM_ASSERTION_METHOD, assertionMethods);
+//        didDocument.setJsonObjectKeyValue(DIDKeywords.JSONLD_TERM_AUTHENTICATION, authentications);
+//        didDocument.setJsonObjectKeyValue(DIDKeywords.JSONLD_TERM_PUBLICKEY, publicKeys);
+//        didDocument.setJsonObjectKeyValue(DIDConstants.JSONLD_TERM_ASSERTION_METHOD, assertionMethods);
 
         return didDocument;
     }
 
-    public DIDDocument toDid(String identifier, DidResponse didResponse) throws URISyntaxException {
-        String did = identifier;
-        if (!identifier.startsWith("did:")) {
-            did = "did:factom:" + identifier;
-        }
-        DIDURL didurl = DIDVersion.FACTOM_V1_JSON.getDidUrl(did);
-        List<DidKey> didKeys = Optional.ofNullable(didResponse.getFactomDidContent().getDidKey()).orElse(new ArrayList<>());
-        List<String> authentications = new ArrayList<>();
-        List<String> assertionMethods = new ArrayList<>();
-        List<PublicKey> publicKeys = new ArrayList<>();
+    public DIDDocument toDid(String identifier, DidResponse didResponse) {
+        return toDid(identifier, didResponse.getFactomDidContent());
+    }
+
+    public DIDDocument toDid(String identifier, FactomDidContent didContent) {
+        final String did = did(identifier);
+        final DIDURL didurl = DIDVersion.FACTOM_IDENTITY_CHAIN.getDidUrl(did);
+        final List<VerificationMethod> verificationMethods = new ArrayList<>();
+        final List<VerificationMethod> authentications = new ArrayList<>();
+        final List<VerificationMethod> assertionMethods = new ArrayList<>();
+        final List<VerificationMethod> capabilityDelegationMethods = new ArrayList<>();
+        final List<VerificationMethod> capabilityInvocationMethods = new ArrayList<>();
+        final List<VerificationMethod> keyAgreementMethods = new ArrayList<>();
+        final List<DidKey> didKeys = Optional.ofNullable(didContent.getDidKey()).orElse(new ArrayList<>());
+        final List<foundation.identity.did.Service> services = new ArrayList<>();
+
         for (DidKey key : didKeys) {
-            URI keyId = new URI(key.getId());
-            if (key.getPurpose().contains(KeyPurpose.AUTHENTICATION)) {
-                authentications.add(keyId.toString());
-            } else {
-                // ToDo: figure out what to do with assertionMethods (probably need a new model constant for KeyPurpose)
-                assertionMethods.add(keyId.toString());
+            URI keyId = constructURI(key.getId());
+
+            String mbKey = null;
+            if (key.getPublicKeyMultibase() != null) {
+                // We decode to ensure it is in proper format
+                Multibase.decode(key.getPublicKeyMultibase());
+                mbKey = key.getPublicKeyMultibase();
             }
-            PublicKey publicKey = PublicKey.builder()
+
+            VerificationMethod verificationMethod = VerificationMethod.builder()
                     .id(keyId)
-                    .type(key.getType().getValue())
+                    .type(key.getType() == KeyType.ED25519VERIFICATIONKEY ?
+                            KeyType.ED25519VERIFICATIONKEY2018.getValue() : key.getType().getValue())
                     .publicKeyBase58(key.getPublicKeyBase58())
+                    .publicKeyHex(key.getPublicKeyHex())
+                    .publicKeyBase64(key.getPublicKeyBase64())
+                    .publicKeyPem(key.getPublicKeyPem())
+                    .publicKeyMultibase(mbKey)
+                    .publicKeyJwk(key.getPublicKeyJwk() == null ? null : new JwkMapper().toMap(key.getPublicKeyJwk()))
                     .build();
-            publicKey.setJsonObjectKeyValue(DIDConstants.JSONLD_TERM_CONTROLLER, key.getController());
-            publicKeys.add(publicKey);
+
+            if (key.getPurpose().contains(KeyPurpose.VERIFICATIONMETHOD) || key.getPurpose().contains(KeyPurpose.PUBLICKEY)) {
+                // Public key is deprecated and has been replaced by verification method in the DID spec
+                verificationMethods.add(verificationMethod);
+            }
+
+            addVerificationRelations(key.getPurpose(), KeyPurpose.AUTHENTICATION, verificationMethods, authentications, verificationMethod);
+            addVerificationRelations(key.getPurpose(), KeyPurpose.ASSERTIONMETHOD, verificationMethods, assertionMethods, verificationMethod);
+            addVerificationRelations(key.getPurpose(), KeyPurpose.CAPABILITYDELEGATION, verificationMethods, capabilityDelegationMethods, verificationMethod);
+            addVerificationRelations(key.getPurpose(), KeyPurpose.CAPABILITYINVOCATION, verificationMethods, capabilityInvocationMethods, verificationMethod);
+            addVerificationRelations(key.getPurpose(), KeyPurpose.KEYAGREEMENT, verificationMethods, keyAgreementMethods, verificationMethod);
+
+
         }
-        DIDDocument didDocument = DIDDocument.builder()
-                .id(new URI(didurl.getDid().getDidString()))
-                .publicKeys(publicKeys)
+
+        if (didContent.getService() != null) {
+            for (Service service : didContent.getService()) {
+                final foundation.identity.did.Service didService = foundation.identity.did.Service.builder()
+                        .id(constructURI(service.getId()))
+                        .serviceEndpoint(service.getServiceEndpoint())
+                        .type(service.getType())
+                        .build();
+                services.add(didService);
+
+            }
+
+        }
+
+        final DIDDocument didDocument = DIDDocument.builder()
+                .id(constructURI(didurl.getDid().getDidString()))
+                .verificationMethods(verificationMethods)
+                .assertionMethodVerificationMethods(assertionMethods)
+                .authenticationVerificationMethods(authentications)
+                .capabilityDelegationVerificationMethods(capabilityDelegationMethods)
+                .capabilityInvocationVerificationMethods(capabilityInvocationMethods)
+                .keyAgreementVerificationMethods(keyAgreementMethods)
+                .services(services)
                 .build();
 
-        didDocument.setJsonObjectKeyValue(DIDConstants.JSONLD_TERM_ASSERTION_METHOD, assertionMethods);
-        didDocument.setJsonObjectKeyValue(DIDKeywords.JSONLD_TERM_AUTHENTICATION, authentications);
+        // TODO: 16/08/2021 We need to put a reference if the methods are re-used outside of the verificationMethod, like we did below!
+//        didDocument.setJsonObjectKeyValue(DIDConstants.JSONLD_TERM_ASSERTION_METHOD, assertionMethods);
+//        didDocument.setJsonObjectKeyValue(DIDKeywords.JSONLD_TERM_AUTHENTICATION, authentications);
         return didDocument;
+    }
+
+    private URI constructURI(String uri) {
+        try {
+            return new URI(uri);
+        } catch (URISyntaxException e) {
+            throw new FactomRuntimeException.AssertionException(e);
+        }
+    }
+
+    private void addVerificationRelations(List<KeyPurpose> keyPurposes, KeyPurpose applicableKeyPurpose, List<VerificationMethod> allVerificationMethods, List<VerificationMethod> specificVerificationMethods, VerificationMethod currentVerificationMethod) {
+        if (keyPurposes.contains(applicableKeyPurpose)) {
+            specificVerificationMethods.add(currentVerificationMethod);
+        }
+    }
+    
+
+    private String did(String identifier) {
+        String did = identifier;
+        if (!identifier.startsWith("did:")) {
+            did = DID_FACTOM + identifier;
+        }
+        return did;
     }
 }
