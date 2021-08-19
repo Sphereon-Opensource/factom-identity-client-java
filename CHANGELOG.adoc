@@ -13,6 +13,6 @@ This document provides a high-level overview of the changes introduced in Factom
 For a detailed view of what has changed, refer to our {uri-repo}/commits/master[commit history] on GitHub.
 
 
-== 0.4.0 - release date 20210818
+== 0.4.0 - release date 20210819
 
 This is the initial version of the Factom Identity Client project. It contains low level support to create Factom identity chains as well as manage and validating DIDs. Some features for updating/deactivating DIDs are still missing.
