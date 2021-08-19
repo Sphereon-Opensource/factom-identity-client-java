@@ -37,6 +37,10 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import static com.sphereon.factom.identity.did.Constants.DID.DID_FACTOM;
 
@@ -90,47 +94,77 @@ public class LowLevelIdentityClient {
      * @throws RuleException
      */
     public List<FactomIdentityEntry<?>> getAllEntriesByIdentifier(String identifier, EntryValidation validate, Optional<Long> maxHeight, Optional<Long> maxTimestamp) throws RuleException, ParserException {
-        List<FactomIdentityEntry<?>> entries = new ArrayList<>();
+
         String chainId = getChainIdFrom(identifier);
-        List<EntryBlockResponse> entryBlockResponses = getEntryApi().allEntryBlocks(chainId).join();
-        for (EntryBlockResponse entryBlockResponse : entryBlockResponses) {
-            EntryBlockResponse.Header header = entryBlockResponse.getHeader();
 
-            int size = entryBlockResponse.getEntryList().size();
-            for (int i = size - 1; i >= 0; i--) {
-                if (entryBlockResponse.getHeader().getDirectoryBlockHeight() > maxHeight.orElse(Long.MAX_VALUE)) {
-                    // blockheight is bigger than max supplied height
-                    continue;
-                }
-                if (entryBlockResponse.getHeader().getTimestamp() > maxTimestamp.orElse(Long.MAX_VALUE)) {
-                    // timestamp of entry is bigger than max supplied timestamp
-                    continue;
-                }
-                EntryBlockResponse.Entry entryBlockEntry = entryBlockResponse.getEntryList().get(i);
-                BlockInfo blockInfo = new BlockInfo()
-                        .blockHeight(header.getDirectoryBlockHeight())
-                        .blockTimestamp(header.getTimestamp())
-                        .entryTimestamp(entryBlockEntry.getTimestamp())
-                        .entryHash(entryBlockEntry.getEntryHash());
+        CompletableFuture<List<FactomIdentityEntry<?>>> entriesFuture = getEntryApi().allEntryBlocks(chainId).handle((entryBlockResponses1, throwable) -> {
 
-                EntryResponse entryResponse = getEntryApi().getFactomdClient().entry(entryBlockEntry.getEntryHash()).join().getResult();
-                Entry entry = ENCODE_OPS.decodeHex(
-                        new Entry()
-                                .setChainId(entryResponse.getChainId())
-                                .setExternalIds(entryResponse.getExtIds())
-                                .setContent(entryResponse.getContent()));
-                try {
-                    entries.add(ENTRY_FACTORY.from(entry, blockInfo, validate));
-                } catch (RuleException e) {
-                    logger.warn("Entry in chain " + chainId + " was not parsable, with RuleException.", e);
-                }
+            final List<FactomIdentityEntry<?>> entries = new ArrayList<>();
 
+            for (EntryBlockResponse entryBlockResponse : entryBlockResponses1) {
+                EntryBlockResponse.Header header = entryBlockResponse.getHeader();
+
+                int size = entryBlockResponse.getEntryList().size();
+                for (int i = size - 1; i >= 0; i--) {
+                    if (entryBlockResponse.getHeader().getDirectoryBlockHeight() > maxHeight.orElse(Long.MAX_VALUE)) {
+                        // blockheight is bigger than max supplied height
+                        continue;
+                    }
+                    if (entryBlockResponse.getHeader().getTimestamp() > maxTimestamp.orElse(Long.MAX_VALUE)) {
+                        // timestamp of entry is bigger than max supplied timestamp
+                        continue;
+                    }
+                    EntryBlockResponse.Entry entryBlockEntry = entryBlockResponse.getEntryList().get(i);
+                    BlockInfo blockInfo = new BlockInfo()
+                            .blockHeight(header.getDirectoryBlockHeight())
+                            .blockTimestamp(header.getTimestamp())
+                            .entryTimestamp(entryBlockEntry.getTimestamp())
+                            .entryHash(entryBlockEntry.getEntryHash());
+
+                    EntryResponse entryResponse = getEntryApi().getFactomdClient().entry(entryBlockEntry.getEntryHash()).join().getResult();
+                    Entry entry = ENCODE_OPS.decodeHex(
+                            new Entry()
+                                    .setChainId(entryResponse.getChainId())
+                                    .setExternalIds(entryResponse.getExtIds())
+                                    .setContent(entryResponse.getContent()));
+                    try {
+                        entries.add(ENTRY_FACTORY.from(entry, blockInfo, validate));
+                    } catch (RuleException e) {
+                        logger.warn("Entry in chain " + chainId + " was not parsable, with RuleException.", e);
+                    }
+
+                }
             }
+            return entries;
+        });
+
+
+        try {
+            final List<FactomIdentityEntry<?>> entries = entriesFuture.exceptionally(throwable -> {
+                try {
+                    return getEntryApi().getFactomdClient().pendingEntries(0).thenApply(pendingResponse -> {
+                                if (!pendingResponse.hasErrors() && pendingResponse.getResult().contains(chainId)) {
+                                    logger.info("Chain id %s is pending ahchoring", chainId);
+                                    return new ArrayList<FactomIdentityEntry<?>>();
+                                } else {
+                                    logger.error("Chain id %s not found", chainId);
+                                    return null;
+                                }
+                            }
+                    ).get(5, TimeUnit.SECONDS);
+                } catch (Exception e) {
+                    throw new DIDRuntimeException(e);
+                }
+
+            }).get(5, TimeUnit.SECONDS);
+
+            if (entries != null && entries.size() > 1) {
+                Collections.reverse(entries);
+            }
+            return entries;
+        } catch (InterruptedException | ExecutionException | TimeoutException e) {
+            throw new DIDRuntimeException(e);
         }
-        if (entries.size() > 1) {
-            Collections.reverse(entries);
-        }
-        return entries;
     }
 
 
