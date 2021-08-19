@@ -2,6 +2,7 @@ plugins {
     id 'java'
     id 'maven'
     id 'maven-publish'
+    id 'nu.studer.credentials' version '1.0.7'
 }
 
 group 'com.sphereon.public'
