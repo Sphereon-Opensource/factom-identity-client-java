@@ -8,9 +8,11 @@ import com.sphereon.factom.identity.did.entry.EntryValidation;
 import com.sphereon.factom.identity.did.entry.FactomIdentityEntry;
 import com.sphereon.factom.identity.did.entry.IdentityEntryFactory;
 import com.sphereon.factom.identity.did.entry.ReplaceKeyIdentityChainEntry;
+import com.sphereon.factom.identity.did.entry.ResolvedFactomDIDEntry;
 import com.sphereon.factom.identity.did.entry.UpdateFactomDIDEntry;
 import com.sphereon.factom.identity.did.parse.RuleException;
 import com.sphereon.factom.identity.did.parse.operations.DIDV1CreationCompoundRule;
+import com.sphereon.factom.identity.did.parse.operations.FactomIdentityChainCreationCompoundRule;
 import foundation.identity.did.parser.ParserException;
 import org.blockchain_innovation.factom.client.api.EntryApi;
 import org.blockchain_innovation.factom.client.api.errors.FactomRuntimeException;
@@ -24,8 +26,11 @@ import org.blockchain_innovation.factom.client.api.model.response.CommitAndRevea
 import org.blockchain_innovation.factom.client.api.model.response.factomd.EntryBlockResponse;
 import org.blockchain_innovation.factom.client.api.model.response.factomd.EntryResponse;
 import org.blockchain_innovation.factom.client.api.ops.EncodeOperations;
+import org.blockchain_innovation.factom.client.api.ops.Encoding;
+import org.blockchain_innovation.factom.client.api.ops.EntryOperations;
 import org.factomprotocol.identity.did.model.BlockInfo;
 import org.factomprotocol.identity.did.model.FactomDidContent;
+import org.factomprotocol.identity.did.model.IdentityEntry;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -37,7 +42,8 @@ import static com.sphereon.factom.identity.did.Constants.DID.DID_FACTOM;
 
 public class LowLevelIdentityClient {
     private static final IdentityEntryFactory ENTRY_FACTORY = new IdentityEntryFactory();
-    private static final EncodeOperations ENCODE = new EncodeOperations();
+    private static final EncodeOperations ENCODE_OPS = new EncodeOperations();
+    private static final EntryOperations ENTRY_OPS = new EntryOperations();
     private static final Logger logger = LogFactory.getLogger(LowLevelIdentityClient.class);
 
     private EntryApi entryApi;
@@ -108,7 +114,7 @@ public class LowLevelIdentityClient {
                         .entryHash(entryBlockEntry.getEntryHash());
 
                 EntryResponse entryResponse = getEntryApi().getFactomdClient().entry(entryBlockEntry.getEntryHash()).join().getResult();
-                Entry entry = ENCODE.decodeHex(
+                Entry entry = ENCODE_OPS.decodeHex(
                         new Entry()
                                 .setChainId(entryResponse.getChainId())
                                 .setExternalIds(entryResponse.getExtIds())
@@ -136,11 +142,14 @@ public class LowLevelIdentityClient {
      * @return
      */
     public FactomDidContent create(CreateFactomDIDEntry createDidEntry, Address ecAddress) {
-        Chain chain = new Chain().setFirstEntry(createDidEntry.toEntry(Optional.empty()));
+        final Chain chain = new Chain().setFirstEntry(createDidEntry.toEntry(Optional.empty()));
+        final String chainId = getChainIdFrom(chain);
         try {
             FactomDidContent didContent = new DIDV1CreationCompoundRule(chain).execute();
             if (getEntryApi().chainExists(chain).join()) {
-                throw new FactomRuntimeException.AssertionException(String.format("Factom DID chain for id '%s' already exists", createDidEntry.getChainId()));
+                throw new FactomRuntimeException.AssertionException(String.format("Factom DID chain for id '%s' already exists", chainId));
+            } else if (didContent.getManagementKey().size() == 0 || !didContent.getManagementKey().stream().allMatch(managementKey -> managementKey.getId().contains(chainId))) {
+                throw new FactomRuntimeException.AssertionException("Management key ids need to correspond to the chain they are part of :" + chainId);
             }
             CommitAndRevealChainResponse chainResponse = getEntryApi().commitAndRevealChain(chain, ecAddress).join();
             return didContent;
@@ -156,13 +165,20 @@ public class LowLevelIdentityClient {
      * @param ecAddress          The paying EC address
      * @return
      */
-    public CommitAndRevealChainResponse create(CreateIdentityRequestEntry identityChainEntry, Address ecAddress) {
-        Entry entry = identityChainEntry.toEntry(Optional.empty());
-        Chain chain = new Chain().setFirstEntry(entry);
-        if (getEntryApi().chainExists(chain).join()) {
-            throw new FactomRuntimeException.AssertionException(String.format("Factom identity chain for id '%s' already exists", entry.getChainId()));
+    public IdentityEntry create(CreateIdentityRequestEntry identityChainEntry, Address ecAddress) {
+
+        final Chain chain = new Chain().setFirstEntry(identityChainEntry.toEntry(Optional.empty()));
+        final String chainId = getChainIdFrom(chain);
+        try {
+            final IdentityEntry identityEntry = new FactomIdentityChainCreationCompoundRule(chain).execute();
+            if (getEntryApi().chainExists(chain).join()) {
+                throw new FactomRuntimeException.AssertionException(String.format("Factom identity chain for id '%s' already exists", chainId));
+            }
+            getEntryApi().commitAndRevealChain(chain, ecAddress).join();
+            return identityEntry;
+        } catch (RuleException e) {
+            throw new FactomRuntimeException(e);
         }
-        return getEntryApi().commitAndRevealChain(chain, ecAddress).join();
     }
 
 
@@ -238,7 +254,17 @@ public class LowLevelIdentityClient {
         return getEntryApi().commitAndRevealEntry(deactivateEntry.toEntry(Optional.empty()), ecAddress).join();
     }
 
-    private String getChainIdFrom(String identifier) {
+
+    public String getChainIdFrom(Chain chain) {
+        return Encoding.HEX.encode(ENTRY_OPS.calculateChainId(chain.getFirstEntry().getExternalIds()));
+    }
+
+    public String getChainIdFrom(ResolvedFactomDIDEntry<?> factomDIDEntry) {
+        final Chain chain = new Chain().setFirstEntry(factomDIDEntry.toEntry(Optional.empty()));
+        return getChainIdFrom(chain);
+    }
+
+    public String getChainIdFrom(String identifier) {
         String chainId = identifier;
         if (identifier == null) {
             throw new DIDRuntimeException.InvalidIdentifierException("Identifier must be non-null.");

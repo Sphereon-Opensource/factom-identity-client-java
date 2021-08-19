@@ -1,11 +1,14 @@
 package com.sphereon.factom.identity.did.request;
 
 import com.sphereon.factom.identity.did.DIDVersion;
+import com.sphereon.factom.identity.did.IdentityFactory;
 import com.sphereon.factom.identity.did.entry.CreateFactomDIDEntry;
 import foundation.identity.did.DID;
+import foundation.identity.did.DIDDocument;
 import org.blockchain_innovation.factom.client.impl.Networks;
 import org.factomprotocol.identity.did.model.DidMethodVersion;
 import org.factomprotocol.identity.did.model.FactomDidContent;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -47,7 +50,8 @@ public class CreateFactomDidRequest {
     }
 
     public FactomDidContent toFactomDidContent() {
-        String chainId = new CreateFactomDIDEntry(this.didVersion, null, this.nonce, this.tags).getChainId();
+        final CreateFactomDIDEntry createFactomDIDEntry = toCreateFactomDIDEntry();
+        String chainId = createFactomDIDEntry.getChainId();
         String did = getDidURL(chainId);
         return new FactomDidContent()
                 .didMethodVersion(DidMethodVersion.fromValue(didVersion.getSchemaVersion()))
@@ -57,6 +61,15 @@ public class CreateFactomDidRequest {
                         .collect(Collectors.toList()))
                 .service(this.services.stream().map(didService -> didService.toService(did))
                         .collect(Collectors.toList()));
+    }
+
+    @NotNull
+    private CreateFactomDIDEntry toCreateFactomDIDEntry() {
+        return new CreateFactomDIDEntry(this.didVersion, null, this.nonce, this.tags);
+    }
+
+    public DIDDocument toDIDDocument() {
+        return new IdentityFactory().toDid(toCreateFactomDIDEntry().getChainId(), toFactomDidContent());
     }
 
     private String getDidURL(String chainId) {

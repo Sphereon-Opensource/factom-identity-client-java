@@ -10,16 +10,17 @@ import com.sphereon.factom.identity.did.parse.operations.DIDV1CreationCompoundRu
 import com.sphereon.factom.identity.did.parse.operations.FactomIdentityChainCreationCompoundRule;
 import org.factomprotocol.identity.did.model.BlockInfo;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
 public class ResolvedFactomDIDEntry<T> extends AbstractFactomIdentityEntry<T> {
     private String nonce;
-    private List<String> additionalTags;
+    private List<String> additionalTags = new ArrayList<>();
 
     public ResolvedFactomDIDEntry(DIDVersion didVersion, T content, String nonce, String... additionalTags) {
-        super(DIDVersion.FACTOM_IDENTITY_CHAIN == didVersion ? OperationValue.IDENTITY_CHAIN_CREATION : OperationValue.DID_MANAGEMENT, didVersion, content, additionalTags.length == 0 ? new String[]{nonce} : ArrayUtils.insert(0, additionalTags, nonce));
+        super(DIDVersion.FACTOM_IDENTITY_CHAIN == didVersion ? OperationValue.IDENTITY_CHAIN_CREATION : OperationValue.DID_MANAGEMENT, didVersion, content, additionalTags.length == 0 ? new String[]{nonce} : nonce == null ? additionalTags : ArrayUtils.insert(0, additionalTags, nonce));
         this.nonce = nonce;
         if (additionalTags != null) {
             this.additionalTags = Arrays.asList(additionalTags);
@@ -28,10 +29,19 @@ public class ResolvedFactomDIDEntry<T> extends AbstractFactomIdentityEntry<T> {
 
     public ResolvedFactomDIDEntry(Entry entry, Class<T> tClass, BlockInfo blockInfo) {
         super(entry, tClass, blockInfo);
-        this.nonce = entry.getExternalIds().get(1);
         int size = entry.getExternalIds().size();
-        if (size > 2) {
-            this.additionalTags = entry.getExternalIds().subList(2, size);
+        if (getDidVersion() == DIDVersion.FACTOM_V1_JSON) {
+            if (size > 2) {
+                this.nonce = entry.getExternalIds().get(2);
+                if (size > 3) {
+                    this.additionalTags = entry.getExternalIds().subList(3, size);
+                }
+            }
+        } else if (getDidVersion() == DIDVersion.FACTOM_IDENTITY_CHAIN) {
+            this.nonce = null;
+            if (size > 1) {
+                this.additionalTags = entry.getExternalIds().subList(1, size);
+            }
         }
     }
 

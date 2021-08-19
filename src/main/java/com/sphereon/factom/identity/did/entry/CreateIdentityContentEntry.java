@@ -12,8 +12,8 @@ public class CreateIdentityContentEntry extends ResolvedFactomDIDEntry<IdentityE
     private int version;
     private List<String> keys;
 
-    public CreateIdentityContentEntry(IdentityEntry content, String nonce, String... additionalTags) {
-        super(DIDVersion.FACTOM_IDENTITY_CHAIN, content, nonce, additionalTags);
+    public CreateIdentityContentEntry(IdentityEntry content, String... tags) {
+        super(DIDVersion.FACTOM_IDENTITY_CHAIN, content, null, tags);
         this.version = content.getVersion();
         this.keys = content.getKeys();
         initValidationRules();

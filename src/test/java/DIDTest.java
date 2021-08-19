@@ -31,6 +31,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -40,6 +41,7 @@ public class DIDTest extends AbstractIdentityTest {
     public static final String ES_ADDRESS = "Es3Y6U6H1Pfg4wYag8VMtRZEGuEJnfkJ2ZuSyCVcQKweB6y4WvGH";
     public static final String DID_FACTOM = "did:factom:";
     private FactomDidContent factomDidContent;
+    private String factomDidContentString;
 
     @BeforeEach
     public void init() throws FileNotFoundException {
@@ -56,8 +58,13 @@ public class DIDTest extends AbstractIdentityTest {
         String nonce = "test-" + System.currentTimeMillis();
         String chainId = new CreateFactomDIDEntry(DIDVersion.FACTOM_V1_JSON, null, nonce).getChainId();
         assertNotNull(chainId);
+        System.err.println("Chain ID: " + chainId);
 
-        CreateFactomDIDEntry createEntry = new CreateFactomDIDEntry(DIDVersion.FACTOM_V1_JSON, factomDidContent, nonce);
+        // We need to replace tke key ids from the input JSON file with the actual chain ids, to keep the client happy
+        final String testJsonContent = GSON.toJson(factomDidContent);
+        final FactomDidContent testDidContent = GSON.fromJson(testJsonContent.replaceAll("6aa7d4afe4932885b5b6e93accb5f4f6c14bd1827733e05e3324ae392c0b2764", chainId), FactomDidContent.class);
+
+        final CreateFactomDIDEntry createEntry = new CreateFactomDIDEntry(DIDVersion.FACTOM_V1_JSON, testDidContent, nonce);
 
         String didURL = DID_FACTOM + chainId;
         String targetId = DIDVersion.FACTOM_V1_JSON.getMethodSpecificId(didURL);
@@ -119,7 +126,7 @@ public class DIDTest extends AbstractIdentityTest {
                 .tag("test")
                 .tag("did")
                 .build();
-        ResolvedFactomDIDEntry<FactomDidContent> content = identityClient.create(createRequest, new Address(ES_ADDRESS));
+        ResolvedFactomDIDEntry<FactomDidContent> content = identityClient.create(createRequest, Optional.of(new Address(ES_ADDRESS)));
         DidKey didKeyResult = content.getContent().getDidKey().get(0);
         assertNotNull(didKeyResult);
 

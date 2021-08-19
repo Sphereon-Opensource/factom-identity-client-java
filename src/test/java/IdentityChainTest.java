@@ -1,18 +1,17 @@
+import com.sphereon.factom.identity.did.DIDVersion;
+import com.sphereon.factom.identity.did.IdentityFactory;
+import com.sphereon.factom.identity.did.OperationValue;
 import com.sphereon.factom.identity.did.entry.CreateIdentityContentEntry;
 import com.sphereon.factom.identity.did.entry.CreateIdentityRequestEntry;
 import com.sphereon.factom.identity.did.entry.EntryValidation;
 import com.sphereon.factom.identity.did.entry.FactomIdentityEntry;
 import com.sphereon.factom.identity.did.entry.ReplaceKeyIdentityChainEntry;
+import com.sphereon.factom.identity.did.parse.RuleException;
 import com.sphereon.factom.identity.did.response.IdentityResponse;
 import foundation.identity.did.parser.ParserException;
 import org.blockchain_innovation.factom.client.api.model.Address;
-import org.blockchain_innovation.factom.client.api.model.response.CommitAndRevealChainResponse;
 import org.blockchain_innovation.factom.client.api.model.response.CommitAndRevealEntryResponse;
 import org.blockchain_innovation.factom.client.api.ops.Encoding;
-import com.sphereon.factom.identity.did.DIDVersion;
-import com.sphereon.factom.identity.did.IdentityFactory;
-import com.sphereon.factom.identity.did.OperationValue;
-import com.sphereon.factom.identity.did.parse.RuleException;
 import org.factomprotocol.identity.did.model.CreateIdentityRequest;
 import org.factomprotocol.identity.did.model.FactomKey;
 import org.factomprotocol.identity.did.model.IdentityEntry;
@@ -23,7 +22,10 @@ import java.security.KeyPair;
 import java.util.List;
 import java.util.UUID;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class IdentityChainTest extends AbstractIdentityTest {
     public static final String IDSEC_ALL_ZEROS = "idsec19zBQP2RjHg8Cb8xH2XHzhsB1a6ZkB23cbS21NSyH9pDbzhnN6";
@@ -57,11 +59,11 @@ public class IdentityChainTest extends AbstractIdentityTest {
                 addKeysItem(new FactomKey().type(KeyType.IDPUB).publicValue(idPub2));
 
         CreateIdentityRequestEntry identityContentEntry = new CreateIdentityRequestEntry(identityRequest);
-        CommitAndRevealChainResponse idChainResponse = lowLevelIdentityClient.create(identityContentEntry, new Address(AbstractIdentityTest.EC_SECRET_ADDRESS));
-        assertNotNull(idChainResponse);
-        assertNotNull(idChainResponse.getCommitChainResponse());
-        assertNotNull(idChainResponse.getRevealResponse());
-        String chainId = idChainResponse.getRevealResponse().getChainId();
+        IdentityEntry identityEntry = lowLevelIdentityClient.create(identityContentEntry, new Address(AbstractIdentityTest.EC_SECRET_ADDRESS));
+        assertNotNull(identityEntry);
+        assertEquals(2, identityEntry.getKeys().size());
+        final String chainId = lowLevelIdentityClient.getChainIdFrom(identityContentEntry);
+
 
         byte[] signature = ID_ADDRESS_KEY_CONVERSIONS.signKeyReplacement(chainId, idPub2, idPub3, getPrivateKey(keyPair1));
         ReplaceKeyIdentityChainEntry replaceEntry = new ReplaceKeyIdentityChainEntry(chainId, idPub2, idPub3, signature, idPub1);
@@ -83,8 +85,9 @@ public class IdentityChainTest extends AbstractIdentityTest {
         assertNotNull(firstEntry.getExternalIds());
         assertEquals(3, firstEntry.getExternalIds().size());
         CreateIdentityContentEntry createIdentityContentEntry = (CreateIdentityContentEntry) firstEntry;
-        assertNotNull(createIdentityContentEntry.getNonce());
-        assertEquals(1, createIdentityContentEntry.getAdditionalTags().size());
+        assertNull(createIdentityContentEntry.getNonce());
+        assertEquals(2, createIdentityContentEntry.getAdditionalTags().size());
+        assertEquals("985a73f9-0578-4d6e-9d23-325a6f5790db", createIdentityContentEntry.getAdditionalTags().get(1));
         assertTrue(createIdentityContentEntry.getBlockInfo().isPresent());
 
 

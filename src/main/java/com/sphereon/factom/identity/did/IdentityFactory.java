@@ -56,76 +56,15 @@ public class IdentityFactory {
             return toDid(identifier, (DidResponse) blockchainResponse);
         }
         if (DIDVersion.FACTOM_IDENTITY_CHAIN.equals(blockchainResponse.getDidVersion())) {
-            return toDid(identifier, (IdentityResponse) blockchainResponse);
+            return toDid(identifier, ((IdentityResponse) blockchainResponse).getIdentity());
         }
         throw new DIDRuntimeException("Invalid BlockchainResponse");
     }
 
-    public IdentityResponse toIdentity(String identifier, List<FactomIdentityEntry<?>> entries) throws RuleException {
-        if (entries == null || entries.size() == 0) {
-            throw new RuleException("Identity for %s could not be resolved", identifier);
-        }
-        Metadata metadata = new Metadata();
-        IdentityEntry identityEntry = null;
-        for (FactomIdentityEntry<?> entry : entries) {
-            if (identityEntry == null) {
-                if (entry.getOperationValue() != OperationValue.IDENTITY_CHAIN_CREATION) {
-                    throw new RuleException("Identity chain %s did not start with an Identity Creation entry", identifier);
-                }
-                identityEntry = ((CreateIdentityContentEntry) entry).getContent();
-                metadata.creation(entry.getBlockInfo().get());
-                metadata.update(entry.getBlockInfo().get());
-                continue;
-            } else if (entry.getOperationValue() != OperationValue.IDENTITY_CHAIN_REPLACE_KEY) {
-                continue;
-            }
-            ReplaceKeyIdentityChainEntry replaceKeyEntry = (ReplaceKeyIdentityChainEntry) entry;
-            if (!ADDRESSES.verifyKeyReplacementSignature(replaceKeyEntry)) {
-                continue;
-            }
-            try {
-                List<String> newKeys = ADDRESSES.createNewKeyReplacementList(identityEntry.getKeys(), replaceKeyEntry.getOldKey(), replaceKeyEntry.getNewKey(), replaceKeyEntry.getSignerKey());
-                identityEntry.setKeys(newKeys);
-                metadata.update(replaceKeyEntry.getBlockInfo().get());
-            } catch (FactomRuntimeException e) {
-                logger.warn("Identity chain replacement entry could not be processed for chain: " + replaceKeyEntry.getChainId(), e);
-            }
-        }
-        if (identityEntry == null) {
-            throw new RuleException("Identity chain %s did not start with an Identity Creation entry", identifier);
-        }
-        return new IdentityResponse()
-                .identity(identityEntry)
-                .metadata(metadata);
-    }
 
-    public DidResponse toDidResponse(String identifier, List<FactomIdentityEntry<?>> entries) throws RuleException {
-        if (entries == null || entries.size() == 0) {
-            throw new RuleException("Identity for %s could not be resolved", identifier);
-        }
-        Metadata metadata = new Metadata();
-        FactomDidContent factomDidContent = null;
-        for (FactomIdentityEntry<?> entry : entries) {
-            // handle first entry
-            if (factomDidContent == null) {
-                if (entry.getOperationValue() != OperationValue.DID_MANAGEMENT) {
-                    throw new RuleException("Identity chain %s did not start with a Create Factom DID entry", identifier);
-                }
-                factomDidContent = ((CreateFactomDIDEntry) entry).getContent();
-                metadata.creation(entry.getBlockInfo().get());
-                metadata.update(entry.getBlockInfo().get());
-            }
-            //ToDo: handle update/deactivate entries
-        }
-        if (factomDidContent == null) {
-            throw new RuleException("DID chain %s did not start with an Create Factom DID entry", identifier);
-        }
-        return new DidResponse()
-                .factomDidContent(factomDidContent)
-                .metadata(metadata);
-    }
 
-    public DIDDocument toDid(String identifier, IdentityResponse identityResponse) {
+
+    public DIDDocument toDid(String identifier, IdentityEntry identityEntry) {
         final String did = did(identifier);
         final DIDURL didurl = DIDVersion.FACTOM_IDENTITY_CHAIN.getDidUrl(did);
         final List<VerificationMethod> verificationMethods = new ArrayList<>();
@@ -133,7 +72,7 @@ public class IdentityFactory {
         final List<VerificationMethod> assertionMethods = new ArrayList<>();
         final List<VerificationMethod> capabilityInvocationMethods = new ArrayList<>();
         final List<VerificationMethod> keyAgreementMethods = new ArrayList<>();
-        final List<String> idPubs = identityResponse.getIdentity().getKeys();
+        final List<String> idPubs = identityEntry.getKeys();
 
 
         for (int i = 0; i < idPubs.size(); i++) {
@@ -141,24 +80,31 @@ public class IdentityFactory {
             final String controller = didurl.getDid().getDidString();
             final String id = String.format("%s#key-%d", controller, i);
             final byte[] keyBytes = ADDRESSES.toEd25519PublicKey(idPub).getAbyte();
-            final String b58Key = Encoding.BASE58.encode(keyBytes);
+//            final String b58Key = Encoding.BASE58.encode(keyBytes);
             final String mbKey = Multibase.encode(Multibase.Base.Base58BTC, keyBytes);
 
             VerificationMethod verificationMethod = VerificationMethod.builder()
                     .id(URI.create(id))
-                    .type("Ed25519VerificationKey2018")
-                    .publicKeyBase58(b58Key)
+                    .type("Ed25519VerificationKey2020")
+//                    .publicKeyBase58(b58Key)
                     .publicKeyMultibase(mbKey)
                     .build();
 
             verificationMethods.add(verificationMethod);
-            if (idPubs.size() == 1 || i < idPubs.size()) {
+            if (idPubs.size() == 1) {
                 capabilityInvocationMethods.add(verificationMethod);
-            }
-            if (i > 0 || idPubs.size() == 1) {
                 keyAgreementMethods.add(verificationMethod);
                 authentications.add(verificationMethod);
                 assertionMethods.add(verificationMethod);
+            } else {
+                if (i < idPubs.size()) {
+                    capabilityInvocationMethods.add(verificationMethod);
+                }
+                if (i > 0) {
+                    keyAgreementMethods.add(verificationMethod);
+                    authentications.add(verificationMethod);
+                    assertionMethods.add(verificationMethod);
+                }
             }
 
         }
@@ -198,14 +144,8 @@ public class IdentityFactory {
         final List<foundation.identity.did.Service> services = new ArrayList<>();
 
         for (DidKey key : didKeys) {
-            URI keyId = constructURI(key.getId());
-
-            String mbKey = null;
-            if (key.getPublicKeyMultibase() != null) {
-                // We decode to ensure it is in proper format
-                Multibase.decode(key.getPublicKeyMultibase());
-                mbKey = key.getPublicKeyMultibase();
-            }
+            final URI keyId = constructURI(key.getId());
+            final String mbKey = getMultibaseKey(key);
 
             VerificationMethod verificationMethod = VerificationMethod.builder()
                     .id(keyId)
@@ -261,6 +201,81 @@ public class IdentityFactory {
 //        didDocument.setJsonObjectKeyValue(DIDConstants.JSONLD_TERM_ASSERTION_METHOD, assertionMethods);
 //        didDocument.setJsonObjectKeyValue(DIDKeywords.JSONLD_TERM_AUTHENTICATION, authentications);
         return didDocument;
+    }
+
+    public DidResponse toDidResponse(String identifier, List<FactomIdentityEntry<?>> entries) throws RuleException {
+        if (entries == null || entries.size() == 0) {
+            throw new RuleException("Identity for %s could not be resolved", identifier);
+        }
+        Metadata metadata = new Metadata();
+        FactomDidContent factomDidContent = null;
+        for (FactomIdentityEntry<?> entry : entries) {
+            // handle first entry
+            if (factomDidContent == null) {
+                if (entry.getOperationValue() != OperationValue.DID_MANAGEMENT) {
+                    throw new RuleException("Identity chain %s did not start with a Create Factom DID entry", identifier);
+                }
+                factomDidContent = ((CreateFactomDIDEntry) entry).getContent();
+                metadata.creation(entry.getBlockInfo().get());
+                metadata.update(entry.getBlockInfo().get());
+            }
+            //ToDo: handle update/deactivate entries
+        }
+        if (factomDidContent == null) {
+            throw new RuleException("DID chain %s did not start with an Create Factom DID entry", identifier);
+        }
+        return new DidResponse()
+                .factomDidContent(factomDidContent)
+                .metadata(metadata);
+    }
+
+    public IdentityResponse toIdentity(String identifier, List<FactomIdentityEntry<?>> entries) throws RuleException {
+        if (entries == null || entries.size() == 0) {
+            throw new RuleException("Identity for %s could not be resolved", identifier);
+        }
+        Metadata metadata = new Metadata();
+        IdentityEntry identityEntry = null;
+        for (FactomIdentityEntry<?> entry : entries) {
+            if (identityEntry == null) {
+                if (entry.getOperationValue() != OperationValue.IDENTITY_CHAIN_CREATION) {
+                    throw new RuleException("Identity chain %s did not start with an Identity Creation entry", identifier);
+                }
+                identityEntry = ((CreateIdentityContentEntry) entry).getContent();
+                metadata.creation(entry.getBlockInfo().get());
+                metadata.update(entry.getBlockInfo().get());
+                continue;
+            } else if (entry.getOperationValue() != OperationValue.IDENTITY_CHAIN_REPLACE_KEY) {
+                continue;
+            }
+            ReplaceKeyIdentityChainEntry replaceKeyEntry = (ReplaceKeyIdentityChainEntry) entry;
+            if (!ADDRESSES.verifyKeyReplacementSignature(replaceKeyEntry)) {
+                continue;
+            }
+            try {
+                List<String> newKeys = ADDRESSES.createNewKeyReplacementList(identityEntry.getKeys(), replaceKeyEntry.getOldKey(), replaceKeyEntry.getNewKey(), replaceKeyEntry.getSignerKey());
+                identityEntry.setKeys(newKeys);
+                metadata.update(replaceKeyEntry.getBlockInfo().get());
+            } catch (FactomRuntimeException e) {
+                logger.warn("Identity chain replacement entry could not be processed for chain: " + replaceKeyEntry.getChainId(), e);
+            }
+        }
+        if (identityEntry == null) {
+            throw new RuleException("Identity chain %s did not start with an Identity Creation entry", identifier);
+        }
+        return new IdentityResponse()
+                .identity(identityEntry)
+                .metadata(metadata);
+    }
+
+
+    private String getMultibaseKey(DidKey key) {
+        String mbKey = null;
+        if (key.getPublicKeyMultibase() != null) {
+            // We decode to ensure it is in proper format
+            Multibase.decode(key.getPublicKeyMultibase());
+            mbKey = key.getPublicKeyMultibase();
+        }
+        return mbKey;
     }
 
     private URI constructURI(String uri) {

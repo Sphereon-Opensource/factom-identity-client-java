@@ -12,7 +12,6 @@ import foundation.identity.did.parser.ParserException;
 import org.blockchain_innovation.factom.client.api.FactomdClient;
 import org.blockchain_innovation.factom.client.api.WalletdClient;
 import org.blockchain_innovation.factom.client.api.model.Address;
-import org.blockchain_innovation.factom.client.api.model.response.CommitAndRevealChainResponse;
 import org.blockchain_innovation.factom.client.impl.EntryApiImpl;
 import org.blockchain_innovation.factom.client.impl.Networks;
 import org.factomprotocol.identity.did.model.FactomDidContent;
@@ -50,20 +49,23 @@ public class IdentityClient {
         return FACTORY.toDid(identifier, FACTORY.toBlockchainResponse(identifier, allEntries));
     }
 
-    public IdentityEntry create(CreateIdentityRequestEntry createRequest, Optional<Address> ecAddress) {
-        CommitAndRevealChainResponse commitAndRevealChainResponse = lowLevelClient().create(createRequest, getEcAddress(ecAddress));
-        // FIXME: 20/10/2020
-        return null;
+    public ResolvedFactomDIDEntry<IdentityEntry> create(CreateIdentityRequestEntry createRequest, Optional<Address> ecAddress) {
+        final IdentityEntry identityEntry = lowLevelClient().create(createRequest, getEcAddress(ecAddress));
+        return new ResolvedFactomDIDEntry<IdentityEntry>(
+                createRequest.getDidVersion(),
+                identityEntry,
+                null,
+                createRequest.getTags().toArray(new String[]{}));
     }
 
-    public ResolvedFactomDIDEntry<FactomDidContent> create(CreateFactomDidRequest createRequest, Address ecAddress) {
+    public ResolvedFactomDIDEntry<FactomDidContent> create(CreateFactomDidRequest createRequest, Optional<Address> ecAddress) {
         FactomDidContent factomDidContentRequest = createRequest.toFactomDidContent();
         CreateFactomDIDEntry createEntry = new CreateFactomDIDEntry(
                 createRequest.getDidVersion(),
                 factomDidContentRequest,
                 createRequest.getNonce(),
                 createRequest.getTags());
-        FactomDidContent factomDidContentResult = lowLevelIdentityClient.create(createEntry, ecAddress);
+        FactomDidContent factomDidContentResult = lowLevelClient().create(createEntry, getEcAddress(ecAddress));
         return new ResolvedFactomDIDEntry<>(
                 createRequest.getDidVersion(),
                 factomDidContentResult,
