@@ -1,4 +1,28 @@
-= Factom Identity Java Client
+:status:
+:outfilesuffix: .adoc
+:uri-build-status: https://github.com/Sphereon-Opensource/factom-identity-client-java/actions/workflows/gradle.yml
+:img-build-status: https://github.com/Sphereon-Opensource/factom-identity-client-java/actions/workflows/gradle.yml/badge.svg
+
+
+++++
+<h1 align="center">
+<br>
+<a href="https://www.sphereon.com"><img src="https://sphereon.com/content/themes/sphereon/assets/img/logo.svg" alt="Sphereon" width="400"></a>
+<br>Factom Identity Java Client
+<br>
+</h1>
+++++
+
+
+ifdef::status[]
+image:{img-build-status}[Build Status Badge,link={uri-build-status}]
+endif::[]
+
+== Active Development
+_IMPORTANT: This software still is in early development stage. As such you should expect breaking changes in APIs, we expect to keep that to a minimum though._
+
+
+== Factom Identity Java Client
 
 A Factom Java client to interact with Factom identities and Decentralized Identifiers.
 
