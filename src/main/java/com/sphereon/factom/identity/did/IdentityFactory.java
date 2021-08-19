@@ -1,7 +1,6 @@
 package com.sphereon.factom.identity.did;
 
 import com.sphereon.factom.identity.did.entry.CreateFactomDIDEntry;
-import com.sphereon.factom.identity.did.entry.CreateIdentityContentEntry;
 import com.sphereon.factom.identity.did.entry.FactomIdentityEntry;
 import com.sphereon.factom.identity.did.entry.ReplaceKeyIdentityChainEntry;
 import com.sphereon.factom.identity.did.mapper.JwkMapper;
@@ -16,7 +15,6 @@ import io.ipfs.multibase.Multibase;
 import org.blockchain_innovation.factom.client.api.errors.FactomRuntimeException;
 import org.blockchain_innovation.factom.client.api.log.LogFactory;
 import org.blockchain_innovation.factom.client.api.log.Logger;
-import org.blockchain_innovation.factom.client.api.ops.Encoding;
 import org.factomprotocol.identity.did.model.DidKey;
 import org.factomprotocol.identity.did.model.FactomDidContent;
 import org.factomprotocol.identity.did.model.IdentityEntry;
@@ -24,7 +22,6 @@ import org.factomprotocol.identity.did.model.KeyPurpose;
 import org.factomprotocol.identity.did.model.KeyType;
 import org.factomprotocol.identity.did.model.Metadata;
 import org.factomprotocol.identity.did.model.Service;
-
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -240,9 +237,15 @@ public class IdentityFactory {
                 if (entry.getOperationValue() != OperationValue.IDENTITY_CHAIN_CREATION) {
                     throw new RuleException("Identity chain %s did not start with an Identity Creation entry", identifier);
                 }
-                identityEntry = ((CreateIdentityContentEntry) entry).getContent();
-                metadata.creation(entry.getBlockInfo().get());
-                metadata.update(entry.getBlockInfo().get());
+                try {
+                    identityEntry = (IdentityEntry) entry.getContent();
+                } catch (ClassCastException cce) {
+                    throw new RuleException("Identity chain %s did not start with an Identity Creation entry", identifier);
+                }
+                if (entry.getBlockInfo().isPresent()) {
+                    metadata.creation(entry.getBlockInfo().get());
+                    metadata.update(entry.getBlockInfo().get());
+                }
                 continue;
             } else if (entry.getOperationValue() != OperationValue.IDENTITY_CHAIN_REPLACE_KEY) {
                 continue;
