@@ -2,7 +2,6 @@
 
 A Factom Java client to interact with Factom identities and Decentralized Identifiers.
 
-C
 
 == Maven installation
 This is a gradle project but maven snapshots and releases are distributed on the Nexus installation of Sphereon at
@@ -15,27 +14,19 @@ You need at least the following dependencies in your application
 <dependency>
     <groupId>org.blockchain-innovation.factom.client</groupId>
     <artifactId>factom-client-impl</artifactId>
-    <version>0.3.0</version>
+    <version>0.4.1</version>
     <scope>compile</scope>
 </dependency>
 <dependency>
     <groupId>org.blockchain-innovation.factom.client</groupId>
     <artifactId>logger-slf4j</artifactId>
-    <version>0.3.0</version>
-    <scope>compile</scope>
-</dependency>
-
-<!-- At least one of the following dependencies -->
-<dependency>
-    <groupId>org.blockchain-innovation.factom.client</groupId>
-    <artifactId>json-converter-jee</artifactId>
-    <version>0.3.0</version>
+    <version>0.4.1</version>
     <scope>compile</scope>
 </dependency>
 <dependency>
     <groupId>org.blockchain-innovation.factom.client</groupId>
     <artifactId>json-converter-gson</artifactId>
-    <version>0.3.0</version>
+    <version>0.4.1</version>
     <scope>compile</scope>
 </dependency>
 
@@ -44,14 +35,14 @@ You need at least the following dependencies in your application
 <dependency>
     <groupId>org.factomprotocol.identity</groupId>
     <artifactId>factom-did-models-java-gson</artifactId>
-    <version>0.3.0-SNAPSHOT</version>
-    <scope>compile</scope>
+    <version>0.3.1</version>
 </dependency>
+
 <!-- Offline signing support -->
 <dependency>
     <groupId>org.blockchain-innovation.factom.client</groupId>
     <artifactId>factom-client-offline-signing</artifactId>
-    <version>0.3.0</version>
+    <version>0.4.1</version>
     <scope>compile</scope>
 </dependency>
 
