@@ -13,7 +13,7 @@ ext {
     repoPass = project.hasProperty('repoPass') ? project.getProperty('repoPass') : credentials.nexusPassword
 }
 
-sourceCompatibility = 8
+sourceCompatibility = 11
 repositories {
     mavenLocal()
     google()
