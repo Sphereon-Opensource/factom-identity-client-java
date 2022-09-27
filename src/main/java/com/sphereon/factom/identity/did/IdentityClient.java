@@ -9,14 +9,6 @@ import com.sphereon.factom.identity.did.parse.RuleException;
 import com.sphereon.factom.identity.did.request.CreateFactomDidRequest;
 import foundation.identity.did.DIDDocument;
 import foundation.identity.did.parser.ParserException;
-import org.blockchain_innovation.factom.client.api.FactomdClient;
-import org.blockchain_innovation.factom.client.api.WalletdClient;
-import org.blockchain_innovation.factom.client.api.model.Address;
-import org.blockchain_innovation.factom.client.impl.EntryApiImpl;
-import org.blockchain_innovation.factom.client.impl.Networks;
-import org.factomprotocol.identity.did.model.FactomDidContent;
-import org.factomprotocol.identity.did.model.IdentityEntry;
-
 import java.io.File;
 import java.net.URISyntaxException;
 import java.nio.file.Path;
@@ -25,6 +17,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
+import org.blockchain_innovation.accumulate.factombridge.impl.EntryApiImpl;
+import org.blockchain_innovation.accumulate.factombridge.impl.Networks;
+import org.blockchain_innovation.factom.client.api.FactomdClient;
+import org.blockchain_innovation.factom.client.api.WalletdClient;
+import org.blockchain_innovation.factom.client.api.model.Address;
+import org.blockchain_innovation.factom.client.api.model.ECAddress;
+import org.factomprotocol.identity.did.model.FactomDidContent;
+import org.factomprotocol.identity.did.model.IdentityEntry;
 
 public class IdentityClient {
 
@@ -43,34 +43,35 @@ public class IdentityClient {
         return networkName;
     }
 
-    public DIDDocument getDidDocument(String identifier, EntryValidation entryValidation, Optional<Long> blockHeight, Optional<Long> timestamp) throws RuleException, ParserException, URISyntaxException {
+    public DIDDocument getDidDocument(String identifier, EntryValidation entryValidation, Optional<Long> blockHeight, Optional<Long> timestamp)
+      throws RuleException, ParserException, URISyntaxException {
         List<FactomIdentityEntry<?>> allEntries = lowLevelClient()
-                .getAllEntriesByIdentifier(identifier, entryValidation, blockHeight, timestamp);
+          .getAllEntriesByIdentifier(identifier, entryValidation, blockHeight, timestamp);
         return FACTORY.toDid(identifier, FACTORY.toBlockchainResponse(identifier, allEntries));
     }
 
-    public ResolvedFactomDIDEntry<IdentityEntry> create(CreateIdentityRequestEntry createRequest, Optional<Address> ecAddress) {
-        final IdentityEntry identityEntry = lowLevelClient().create(createRequest, getEcAddress(ecAddress));
+    public ResolvedFactomDIDEntry<IdentityEntry> create(CreateIdentityRequestEntry createRequest, Optional<Address> address) {
+        final IdentityEntry identityEntry = lowLevelClient().create(createRequest, getAddress(address));
         return new ResolvedFactomDIDEntry<IdentityEntry>(
-                createRequest.getDidVersion(),
-                identityEntry,
-                null,
-                createRequest.getTags().toArray(new String[]{}));
+          createRequest.getDidVersion(),
+          identityEntry,
+          null,
+          createRequest.getTags().toArray(new String[]{}));
     }
 
     public ResolvedFactomDIDEntry<FactomDidContent> create(CreateFactomDidRequest createRequest, Optional<Address> ecAddress) {
         FactomDidContent factomDidContentRequest = createRequest.toFactomDidContent();
         CreateFactomDIDEntry createEntry = new CreateFactomDIDEntry(
-                createRequest.getDidVersion(),
-                factomDidContentRequest,
-                createRequest.getNonce(),
-                createRequest.getTags());
-        FactomDidContent factomDidContentResult = lowLevelClient().create(createEntry, getEcAddress(ecAddress));
+          createRequest.getDidVersion(),
+          factomDidContentRequest,
+          createRequest.getNonce(),
+          createRequest.getTags());
+        FactomDidContent factomDidContentResult = lowLevelClient().create(createEntry, getAddress(ecAddress));
         return new ResolvedFactomDIDEntry<>(
-                createRequest.getDidVersion(),
-                factomDidContentResult,
-                createRequest.getNonce(),
-                createRequest.getTags());
+          createRequest.getDidVersion(),
+          factomDidContentResult,
+          createRequest.getNonce(),
+          createRequest.getTags());
     }
 
 
@@ -84,8 +85,8 @@ public class IdentityClient {
     }
 
 
-    private Address getEcAddress(Optional<Address> address) {
-        return Networks.getECAddress(getNetworkName(), address);
+    private Address getAddress(Optional<Address> address) {
+        return Networks.getAddress(getNetworkName(), address);
     }
 
     private void assertConfigured() {
@@ -109,6 +110,7 @@ public class IdentityClient {
 
 
     public static class Registry {
+
         private static Map<String, IdentityClient> instances = new HashMap<>();
 
         public static boolean exists(Optional<String> id) {
@@ -137,6 +139,7 @@ public class IdentityClient {
     }
 
     public static class Builder {
+
         private Properties properties = new Properties();
         private File propertiesFile;
         private Optional<String> networkName = Optional.empty();

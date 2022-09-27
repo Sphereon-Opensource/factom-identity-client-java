@@ -5,7 +5,7 @@ import com.sphereon.factom.identity.did.IdentityFactory;
 import com.sphereon.factom.identity.did.entry.CreateFactomDIDEntry;
 import foundation.identity.did.DID;
 import foundation.identity.did.DIDDocument;
-import org.blockchain_innovation.factom.client.impl.Networks;
+import org.blockchain_innovation.accumulate.factombridge.impl.Networks;
 import org.factomprotocol.identity.did.model.DidMethodVersion;
 import org.factomprotocol.identity.did.model.FactomDidContent;
 import org.jetbrains.annotations.NotNull;

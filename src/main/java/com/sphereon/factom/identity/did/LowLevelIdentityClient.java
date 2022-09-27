@@ -144,7 +144,7 @@ public class LowLevelIdentityClient {
                 try {
                     return getEntryApi().getFactomdClient().pendingEntries(0).thenApply(pendingResponse -> {
                                 if (!pendingResponse.hasErrors() && pendingResponse.getResult().contains(chainId)) {
-                                    logger.info("Chain id %s is pending ahchoring", chainId);
+                                    logger.info("Chain id %s is pending anchoring", chainId);
                                     return new ArrayList<FactomIdentityEntry<?>>();
                                 } else {
                                     logger.error("Chain id %s not found", chainId);

@@ -110,9 +110,9 @@ publishing {
 
 
 dependencies {
-    compile 'org.blockchain-innovation.factom.client:factom-client-api:0.4.1'
-    compile 'org.blockchain-innovation.factom.client:factom-client-impl:0.4.1'
-    compile 'org.blockchain-innovation.factom.client:factom-client-offline-signing:0.4.1'
+    compile 'org.blockchain-innovation.factom.client:factom-client-api:0.4.3-SNAPSHOT'
+    compile 'org.blockchain-innovation.factom.client:factom-client-impl-accumulate:0.4.3-SNAPSHOT'
+    /*compile 'org.blockchain-innovation.factom.client:factom-client-offline-signing:0.4.3-SNAPSHOT'*/
     compile group: 'org.factomprotocol.identity', name: 'factom-did-models-java-gson', version: '0.3.1'
     compile group: 'decentralized-identity', name: 'did-common-java', version: '0.3.0'
     compile group: 'com.github.multiformats', name: 'java-multibase', version: 'v1.0.0'

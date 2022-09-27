@@ -1,15 +1,42 @@
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import com.google.gson.Gson;
+import io.accumulatenetwork.sdk.api.v2.AccumulateSyncApi;
+import io.accumulatenetwork.sdk.api.v2.TransactionQueryResult;
+import io.accumulatenetwork.sdk.api.v2.TransactionResult;
+import io.accumulatenetwork.sdk.generated.apiv2.TransactionQueryResponse;
+import io.accumulatenetwork.sdk.generated.apiv2.TxnQuery;
+import io.accumulatenetwork.sdk.generated.errors.Status;
+import io.accumulatenetwork.sdk.generated.protocol.AddCredits;
+import io.accumulatenetwork.sdk.generated.protocol.AddCreditsResult;
+import io.accumulatenetwork.sdk.generated.protocol.SignatureType;
+import io.accumulatenetwork.sdk.generated.protocol.TransactionType;
+import io.accumulatenetwork.sdk.protocol.TxID;
+import io.accumulatenetwork.sdk.support.Retry;
+import java.math.BigInteger;
+import java.net.URISyntaxException;
+import java.time.Duration;
+import java.time.temporal.ChronoUnit;
+import java.util.Optional;
+import java.util.concurrent.atomic.AtomicReference;
 import net.i2p.crypto.eddsa.EdDSAPrivateKey;
 import net.i2p.crypto.eddsa.EdDSAPublicKey;
 import net.i2p.crypto.eddsa.KeyPairGenerator;
 import net.i2p.crypto.eddsa.spec.EdDSANamedCurveSpec;
 import net.i2p.crypto.eddsa.spec.EdDSANamedCurveTable;
+import org.blockchain_innovation.accumulate.factombridge.impl.FactomdAccumulateClientImpl;
+import org.blockchain_innovation.accumulate.factombridge.impl.settings.RpcSettingsImpl;
+import org.blockchain_innovation.accumulate.factombridge.model.LiteAccount;
 import org.blockchain_innovation.factom.client.api.errors.FactomRuntimeException;
 import com.sphereon.factom.identity.did.IdAddressKeyOps;
 import com.sphereon.factom.identity.did.IdentityClient;
 import com.sphereon.factom.identity.did.IdentityFactory;
 import com.sphereon.factom.identity.did.LowLevelIdentityClient;
+import org.blockchain_innovation.factom.client.api.settings.RpcSettings;
 import org.factomprotocol.identity.did.invoker.JSON;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 
 import java.io.IOException;
@@ -20,23 +47,40 @@ import java.security.SecureRandom;
 import java.util.Properties;
 
 public abstract class AbstractIdentityTest {
+    static LiteAccount liteAccount;
+    static boolean liteAccountFunded;
     protected static final IdentityFactory IDENTITY_FACTORY = new IdentityFactory();
     public static final IdAddressKeyOps ID_ADDRESS_KEY_CONVERSIONS = new IdAddressKeyOps();
     protected static final Gson GSON = JSON.createGson().create();
     protected IdentityClient identityClient;
     protected LowLevelIdentityClient lowLevelIdentityClient;
-//    protected final EntryApiImpl offlineEntryClient = new EntryApiImpl();
-//    protected final OfflineWalletdClientImpl offlineWalletdClient = new OfflineWalletdClientImpl();
-//    protected final FactomdClientImpl factomdClient = new FactomdClientImpl();
-//    protected final LowLevelIdentityClient lowLevelIdentityClient = new LowLevelIdentityClient();
+    private AccumulateSyncApi accumulate;
+    protected final FactomdAccumulateClientImpl factomdClient = new FactomdAccumulateClientImpl();
 
-    protected static final String EC_SECRET_ADDRESS = System.getProperty("FACTOM_CLIENT_TEST_EC_SECRET_ADDRESS", "Es3Y6U6H1Pfg4wYag8VMtRZEGuEJnfkJ2ZuSyCVcQKweB6y4WvGH");
+
+    @BeforeAll
+    public static void initLiteAccount() {
+        liteAccount = LiteAccount.generate(SignatureType.ED25519);
+    }
 
     @BeforeEach
-    public void setup() throws IOException {
+    public void setup() throws IOException, URISyntaxException {
+
+        final RpcSettingsImpl settings = new RpcSettingsImpl(RpcSettings.SubSystem.FACTOMD, getProperties(), Optional.of("testnet"));
+        factomdClient.setSettings(settings);
 
         this.identityClient = new IdentityClient.Builder().networkName("testnet").properties(getProperties()).autoRegister(true).build();
         this.lowLevelIdentityClient = identityClient.lowLevelClient();
+
+        accumulate = new AccumulateSyncApi(settings.getServer().getURL().toURI());
+        if(!liteAccountFunded) {
+            faucet();
+            faucet();
+            waitForAnchor();
+            addCreditsToLiteAccount();
+            liteAccountFunded = true;
+        }
+
 //        identityClient.lowLevelClient()
 //        factomdClient.setSettings(new RpcSettingsImpl(RpcSettings.SubSystem.FACTOMD, getProperties()));
 //        offlineEntryClient.setFactomdClient(factomdClient);
@@ -74,5 +118,61 @@ public abstract class AbstractIdentityTest {
 
     protected EdDSAPublicKey getPublicKey(KeyPair keyPair) {
         return (EdDSAPublicKey) keyPair.getPublic();
+    }
+
+
+    protected void faucet() {
+        final TxID txId = accumulate.faucet(liteAccount.getAccount().getUrl());
+        waitForTx(txId);
+    }
+
+    protected void addCreditsToLiteAccount() {
+        final AddCredits addCredits = new AddCredits()
+          .recipient(liteAccount.getAccount().getUrl())
+          .amount(BigInteger.valueOf(2000000000L));
+        final TransactionResult<AddCreditsResult> transactionResult = accumulate.addCredits(liteAccount, addCredits);
+        final AddCreditsResult addCreditsResult = transactionResult.getResult();
+        assertNotNull(addCreditsResult);
+        assertTrue(addCreditsResult.getCredits() > 0);
+        final TransactionQueryResult txQueryResult = waitForTx(transactionResult.getTxID());
+        assertEquals(txQueryResult.getTxType(), TransactionType.ADD_CREDITS);
+        waitForAnchor();
+    }
+
+    private TransactionQueryResult waitForTx(final TxID txId) {
+        final AtomicReference<TransactionQueryResult> result = new AtomicReference<TransactionQueryResult>();
+        final TxnQuery txnQuery = new TxnQuery()
+          .txid(txId.getHash())
+          .wait(Duration.ofMinutes(1));
+        new Retry()
+          .withTimeout(1, ChronoUnit.MINUTES)
+          .withDelay(2, ChronoUnit.SECONDS)
+          .withMessage("")
+          .execute(() -> {
+              final TransactionQueryResult txQueryResult = accumulate.getTx(txnQuery);
+              assertNotNull(txQueryResult);
+              final TransactionQueryResponse queryResponse = txQueryResult.getQueryResponse();
+              if (queryResponse.getStatus().getCode() == Status.PENDING) {
+                  return true;
+              }
+              if (!queryResponse.getType().equalsIgnoreCase("syntheticCreateIdentity")) { // TODO syntheticCreateIdentity returns CONFLICT?
+                  assertEquals(Status.DELIVERED, queryResponse.getStatus().getCode());
+              }
+              if (queryResponse.getProduced() != null) {
+                  for (TxID producedTxId : queryResponse.getProduced()) {
+                      waitForTx(producedTxId);
+                  }
+              }
+              result.set(txQueryResult);
+              return false;
+          });
+        return result.get();
+    }
+
+    protected void waitForAnchor() {
+        try {
+            Thread.sleep(1000);
+        } catch (InterruptedException e) {
+        }
     }
 }

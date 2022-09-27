@@ -12,6 +12,7 @@ import com.sphereon.factom.identity.did.parse.RuleException;
 import com.sphereon.factom.identity.did.request.CreateFactomDidRequest;
 import com.sphereon.factom.identity.did.request.CreateKeyRequest;
 import com.sphereon.factom.identity.did.request.CreateServiceRequest;
+import org.blockchain_innovation.factom.client.api.model.ECAddress;
 import org.factomprotocol.identity.did.model.DidKey;
 import org.factomprotocol.identity.did.model.FactomDidContent;
 import org.factomprotocol.identity.did.model.KeyPurpose;
@@ -71,7 +72,7 @@ public class DIDTest extends AbstractIdentityTest {
         String keyId = DID_FACTOM + chainId + "#keys-1";
 //        DIDDocument didDocument = DIDDocument.build(didReference, null, null, null);
 
-        FactomDidContent commitAndRevealChainResponse = lowLevelIdentityClient.create(createEntry, new Address(ES_ADDRESS));
+        FactomDidContent commitAndRevealChainResponse = lowLevelIdentityClient.create(createEntry, liteAccount);
 
         System.err.println(commitAndRevealChainResponse);
         List<FactomIdentityEntry<?>> identityEntries = lowLevelIdentityClient.getAllEntriesByIdentifier(didURL, EntryValidation.THROW_ERROR);
@@ -126,7 +127,7 @@ public class DIDTest extends AbstractIdentityTest {
                 .tag("test")
                 .tag("did")
                 .build();
-        ResolvedFactomDIDEntry<FactomDidContent> content = identityClient.create(createRequest, Optional.of(new Address(ES_ADDRESS)));
+        ResolvedFactomDIDEntry<FactomDidContent> content = identityClient.create(createRequest, Optional.of(liteAccount));
         DidKey didKeyResult = content.getContent().getDidKey().get(0);
         assertNotNull(didKeyResult);
 

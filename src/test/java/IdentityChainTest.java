@@ -10,6 +10,7 @@ import com.sphereon.factom.identity.did.parse.RuleException;
 import com.sphereon.factom.identity.did.response.IdentityResponse;
 import foundation.identity.did.parser.ParserException;
 import org.blockchain_innovation.factom.client.api.model.Address;
+import org.blockchain_innovation.factom.client.api.model.ECAddress;
 import org.blockchain_innovation.factom.client.api.model.response.CommitAndRevealEntryResponse;
 import org.blockchain_innovation.factom.client.api.ops.Encoding;
 import org.factomprotocol.identity.did.model.CreateIdentityRequest;
@@ -59,7 +60,7 @@ public class IdentityChainTest extends AbstractIdentityTest {
                 addKeysItem(new FactomKey().type(KeyType.IDPUB).publicValue(idPub2));
 
         CreateIdentityRequestEntry identityContentEntry = new CreateIdentityRequestEntry(identityRequest);
-        IdentityEntry identityEntry = lowLevelIdentityClient.create(identityContentEntry, new Address(AbstractIdentityTest.EC_SECRET_ADDRESS));
+        IdentityEntry identityEntry = lowLevelIdentityClient.create(identityContentEntry, liteAccount);
         assertNotNull(identityEntry);
         assertEquals(2, identityEntry.getKeys().size());
         final String chainId = lowLevelIdentityClient.getChainIdFrom(identityContentEntry);
@@ -67,7 +68,7 @@ public class IdentityChainTest extends AbstractIdentityTest {
 
         byte[] signature = ID_ADDRESS_KEY_CONVERSIONS.signKeyReplacement(chainId, idPub2, idPub3, getPrivateKey(keyPair1));
         ReplaceKeyIdentityChainEntry replaceEntry = new ReplaceKeyIdentityChainEntry(chainId, idPub2, idPub3, signature, idPub1);
-        CommitAndRevealEntryResponse idReplaceResponse = lowLevelIdentityClient.update(replaceEntry, new Address(EC_SECRET_ADDRESS));
+        CommitAndRevealEntryResponse idReplaceResponse = lowLevelIdentityClient.update(replaceEntry, liteAccount);
         assertNotNull(idReplaceResponse);
 
 
@@ -118,7 +119,7 @@ public class IdentityChainTest extends AbstractIdentityTest {
                         "Java-client",
                         "Identity",
                         UUID.randomUUID().toString());
-        lowLevelIdentityClient.create(identityContentEntry, new Address(EC_SECRET_ADDRESS));
+        lowLevelIdentityClient.create(identityContentEntry, liteAccount);
     }
 
 }
