@@ -3,6 +3,10 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.google.gson.Gson;
+import com.sphereon.factom.identity.did.IdAddressKeyOps;
+import com.sphereon.factom.identity.did.IdentityClient;
+import com.sphereon.factom.identity.did.IdentityFactory;
+import com.sphereon.factom.identity.did.LowLevelIdentityClient;
 import io.accumulatenetwork.sdk.api.v2.AccumulateSyncApi;
 import io.accumulatenetwork.sdk.api.v2.TransactionQueryResult;
 import io.accumulatenetwork.sdk.api.v2.TransactionResult;
@@ -15,11 +19,17 @@ import io.accumulatenetwork.sdk.generated.protocol.SignatureType;
 import io.accumulatenetwork.sdk.generated.protocol.TransactionType;
 import io.accumulatenetwork.sdk.protocol.TxID;
 import io.accumulatenetwork.sdk.support.Retry;
+import java.io.IOException;
+import java.io.InputStream;
 import java.math.BigInteger;
 import java.net.URISyntaxException;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.KeyPair;
+import java.security.SecureRandom;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
 import java.util.Optional;
+import java.util.Properties;
 import java.util.concurrent.atomic.AtomicReference;
 import net.i2p.crypto.eddsa.EdDSAPrivateKey;
 import net.i2p.crypto.eddsa.EdDSAPublicKey;
@@ -30,26 +40,17 @@ import org.blockchain_innovation.accumulate.factombridge.impl.FactomdAccumulateC
 import org.blockchain_innovation.accumulate.factombridge.impl.settings.RpcSettingsImpl;
 import org.blockchain_innovation.accumulate.factombridge.model.LiteAccount;
 import org.blockchain_innovation.factom.client.api.errors.FactomRuntimeException;
-import com.sphereon.factom.identity.did.IdAddressKeyOps;
-import com.sphereon.factom.identity.did.IdentityClient;
-import com.sphereon.factom.identity.did.IdentityFactory;
-import com.sphereon.factom.identity.did.LowLevelIdentityClient;
 import org.blockchain_innovation.factom.client.api.settings.RpcSettings;
 import org.factomprotocol.identity.did.invoker.JSON;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.security.InvalidAlgorithmParameterException;
-import java.security.KeyPair;
-import java.security.SecureRandom;
-import java.util.Properties;
-
 public abstract class AbstractIdentityTest {
+
     static LiteAccount liteAccount;
     static boolean liteAccountFunded;
     protected static final IdentityFactory IDENTITY_FACTORY = new IdentityFactory();
+
     public static final IdAddressKeyOps ID_ADDRESS_KEY_CONVERSIONS = new IdAddressKeyOps();
     protected static final Gson GSON = JSON.createGson().create();
     protected IdentityClient identityClient;
@@ -73,7 +74,7 @@ public abstract class AbstractIdentityTest {
         this.lowLevelIdentityClient = identityClient.lowLevelClient();
 
         accumulate = new AccumulateSyncApi(settings.getServer().getURL().toURI());
-        if(!liteAccountFunded) {
+        if (!liteAccountFunded) {
             faucet();
             faucet();
             waitForAnchor();
@@ -130,7 +131,7 @@ public abstract class AbstractIdentityTest {
         final AddCredits addCredits = new AddCredits()
           .recipient(liteAccount.getAccount().getUrl())
           .amount(BigInteger.valueOf(2000000000L));
-        final TransactionResult<AddCreditsResult> transactionResult = accumulate.addCredits(liteAccount, addCredits);
+        final TransactionResult<AddCreditsResult> transactionResult = accumulate.addCredits(addCredits, liteAccount);
         final AddCreditsResult addCreditsResult = transactionResult.getResult();
         assertNotNull(addCreditsResult);
         assertTrue(addCreditsResult.getCredits() > 0);
@@ -171,7 +172,7 @@ public abstract class AbstractIdentityTest {
 
     protected void waitForAnchor() {
         try {
-            Thread.sleep(1000);
+            Thread.sleep(8000);
         } catch (InterruptedException e) {
         }
     }

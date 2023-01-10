@@ -112,15 +112,14 @@ publishing {
 dependencies {
     compile 'org.blockchain-innovation.factom.client:factom-client-api:0.4.3-SNAPSHOT'
     compile 'org.blockchain-innovation.factom.client:factom-client-impl-accumulate:0.4.3-SNAPSHOT'
-    /*compile 'org.blockchain-innovation.factom.client:factom-client-offline-signing:0.4.3-SNAPSHOT'*/
     compile group: 'org.factomprotocol.identity', name: 'factom-did-models-java-gson', version: '0.3.1'
     compile group: 'decentralized-identity', name: 'did-common-java', version: '0.3.0'
     compile group: 'com.github.multiformats', name: 'java-multibase', version: 'v1.0.0'
     compile "javax.json.bind:javax.json.bind-api:1.0.0-RC2"
     compile 'net.i2p.crypto:eddsa:0.3.0'
 
-    testCompile 'org.blockchain-innovation.factom.client:logger-slf4j:0.4.1'
-    testCompile 'org.blockchain-innovation.factom.client:json-converter-gson:0.4.1'
+    testCompile 'org.blockchain-innovation.factom.client:logger-slf4j:0.4.3-SNAPSHOT'
+    testCompile 'org.blockchain-innovation.factom.client:json-converter-gson:0.4.3-SNAPSHOT'
     testImplementation("org.junit.jupiter:junit-jupiter-api:5.6.1")
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.6.1")
 }

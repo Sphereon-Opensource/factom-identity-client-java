@@ -22,7 +22,6 @@ import org.blockchain_innovation.accumulate.factombridge.impl.Networks;
 import org.blockchain_innovation.factom.client.api.FactomdClient;
 import org.blockchain_innovation.factom.client.api.WalletdClient;
 import org.blockchain_innovation.factom.client.api.model.Address;
-import org.blockchain_innovation.factom.client.api.model.ECAddress;
 import org.factomprotocol.identity.did.model.FactomDidContent;
 import org.factomprotocol.identity.did.model.IdentityEntry;
 

@@ -1,24 +1,23 @@
 package com.sphereon.factom.identity.did.request;
 
+import static com.sphereon.factom.identity.did.Constants.DID.DID_FACTOM;
+
 import com.sphereon.factom.identity.did.DIDVersion;
 import com.sphereon.factom.identity.did.IdentityFactory;
 import com.sphereon.factom.identity.did.entry.CreateFactomDIDEntry;
-import foundation.identity.did.DID;
 import foundation.identity.did.DIDDocument;
-import org.blockchain_innovation.accumulate.factombridge.impl.Networks;
-import org.factomprotocol.identity.did.model.DidMethodVersion;
-import org.factomprotocol.identity.did.model.FactomDidContent;
-import org.jetbrains.annotations.NotNull;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
-
-import static com.sphereon.factom.identity.did.Constants.DID.DID_FACTOM;
+import org.blockchain_innovation.accumulate.factombridge.impl.Networks;
+import org.factomprotocol.identity.did.model.DidMethodVersion;
+import org.factomprotocol.identity.did.model.FactomDidContent;
+import org.jetbrains.annotations.NotNull;
 
 public class CreateFactomDidRequest {
+
     private final DIDVersion didVersion;
     private final List<CreateKeyRequest> managementKeys;
     private final List<CreateKeyRequest> didKeys;
@@ -27,7 +26,8 @@ public class CreateFactomDidRequest {
     private final String nonce;
     private final String networkName;
 
-    private CreateFactomDidRequest(DIDVersion didVersion, String networkName, List<CreateKeyRequest> managementKeys, List<CreateKeyRequest> didKey, List<CreateServiceRequest> service, String nonce, String... tags) {
+    private CreateFactomDidRequest(DIDVersion didVersion, String networkName, List<CreateKeyRequest> managementKeys, List<CreateKeyRequest> didKey,
+      List<CreateServiceRequest> service, String nonce, String... tags) {
         this.didVersion = didVersion;
         this.networkName = networkName;
         this.managementKeys = managementKeys;
@@ -54,13 +54,13 @@ public class CreateFactomDidRequest {
         String chainId = createFactomDIDEntry.getChainId();
         String did = getDidURL(chainId);
         return new FactomDidContent()
-                .didMethodVersion(DidMethodVersion.fromValue(didVersion.getSchemaVersion()))
-                .didKey(this.didKeys.stream().map(key -> key.toDidKey(did))
-                        .collect(Collectors.toList()))
-                .managementKey(this.managementKeys.stream().map(key -> key.toManagementKey(did))
-                        .collect(Collectors.toList()))
-                .service(this.services.stream().map(didService -> didService.toService(did))
-                        .collect(Collectors.toList()));
+          .didMethodVersion(DidMethodVersion.fromValue(didVersion.getSchemaVersion()))
+          .didKey(this.didKeys.stream().map(key -> key.toDidKey(did))
+            .collect(Collectors.toList()))
+          .managementKey(this.managementKeys.stream().map(key -> key.toManagementKey(did))
+            .collect(Collectors.toList()))
+          .service(this.services.stream().map(didService -> didService.toService(did))
+            .collect(Collectors.toList()));
     }
 
     @NotNull
@@ -104,7 +104,7 @@ public class CreateFactomDidRequest {
         public Builder managementKey(CreateKeyRequest managementKey) {
             if (this.managementKeys == null) {
                 this.managementKeys = new ArrayList<>(Arrays.asList(managementKey));
-            } else if (!managementKeys.contains(managementKey)){
+            } else if (!managementKeys.contains(managementKey)) {
                 this.managementKeys.add(managementKey);
             }
             return this;
@@ -163,13 +163,13 @@ public class CreateFactomDidRequest {
             }
             this.assertComplete();
             return new CreateFactomDidRequest(
-                    didVersion,
-                    networkName,
-                    managementKeys,
-                    didKeys,
-                    services,
-                    nonce,
-                    tags.toArray(new String[0])
+              didVersion,
+              networkName,
+              managementKeys,
+              didKeys,
+              services,
+              nonce,
+              tags.toArray(new String[0])
             );
         }
 
